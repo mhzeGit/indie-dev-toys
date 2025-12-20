@@ -1,0 +1,101 @@
+<!-- Seamless Texture Tool -->
+<div id="seamless-texture" class="tool-view">
+    <header class="tool-header">
+        <h1><i class="fas fa-border-all"></i> Seamless Texture Generator</h1>
+        <p>Convert images into seamless, tileable textures with advanced blending algorithms.</p>
+    </header>
+    <div class="tool-layout">
+        <div class="tool-sidebar">
+            <div class="control-group">
+                <label>Upload Image</label>
+                <div class="file-upload" id="seamless-upload">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Drag & drop or click to upload</span>
+                    <input type="file" accept="image/*" id="seamless-file-input">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Blending Method</label>
+                <select id="seamless-method">
+                    <option value="mirror">Mirror Blend (Method 1)</option>
+                    <option value="linear" selected>Linear Blend (Method 2)</option>
+                    <option value="cosine">Cosine Blend (Method 3)</option>
+                    <option value="advanced">Advanced Multi-Pass (Method 4)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Blend Size: <span id="seamless-blend-value">25</span>%</label>
+                <input type="range" id="seamless-blend" min="5" max="50" value="25">
+            </div>
+
+            <div class="control-group">
+                <label>Pre-Processing</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="seamless-normalize">
+                        <span>Normalize brightness</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="seamless-average-edges">
+                        <span>Average edge colors</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Averaging Intensity: <span id="seamless-avg-value">20</span></label>
+                <input type="range" id="seamless-avg-intensity" min="0" max="100" value="20">
+            </div>
+
+            <div class="control-group">
+                <label>Pre-Crop (pixels)</label>
+                <div class="crop-inputs">
+                    <input type="number" id="crop-left" placeholder="Left" value="0" min="0">
+                    <input type="number" id="crop-top" placeholder="Top" value="0" min="0">
+                    <input type="number" id="crop-right" placeholder="Right" value="0" min="0">
+                    <input type="number" id="crop-bottom" placeholder="Bottom" value="0" min="0">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Output Format</label>
+                <select id="seamless-format">
+                    <option value="png">PNG (Lossless)</option>
+                    <option value="jpeg">JPEG</option>
+                    <option value="webp">WebP</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="seamless-quality-group">
+                <label>Quality: <span id="seamless-quality-value">92</span>%</label>
+                <input type="range" id="seamless-quality" min="1" max="100" value="92">
+            </div>
+
+            <button class="btn btn-primary btn-block" id="seamless-process">
+                <i class="fas fa-cog"></i> Generate Seamless Texture
+            </button>
+            <button class="btn btn-secondary btn-block" id="seamless-download" disabled>
+                <i class="fas fa-download"></i> Download Result
+            </button>
+        </div>
+
+        <div class="tool-preview">
+            <div class="preview-tabs">
+                <button class="preview-tab active" data-preview="original">Original</button>
+                <button class="preview-tab" data-preview="result">Result</button>
+                <button class="preview-tab" data-preview="tiled">Tiled Preview</button>
+            </div>
+            <div class="preview-container" id="seamless-preview">
+                <div class="preview-placeholder">
+                    <i class="fas fa-image"></i>
+                    <span>Upload an image to begin</span>
+                </div>
+                <canvas id="seamless-canvas" style="display: none;"></canvas>
+                <div id="seamless-tiled-preview" class="tiled-preview" style="display: none;"></div>
+            </div>
+            <div class="preview-info" id="seamless-info"></div>
+        </div>
+    </div>
+</div>

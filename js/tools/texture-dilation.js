@@ -424,7 +424,4 @@ const TextureDilationTool = {
     }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    TextureDilationTool.init();
-});
+// Tool is initialized by App.loadView() when the view is loaded

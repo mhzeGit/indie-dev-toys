@@ -1,0 +1,103 @@
+<!-- Normal Map Generator Tool -->
+<div id="normal-map" class="tool-view">
+    <header class="tool-header">
+        <h1><i class="fas fa-mountain"></i> Normal Map Generator</h1>
+        <p>Generate high-quality normal maps from diffuse/color textures using Sobel operators.</p>
+    </header>
+    <div class="tool-layout">
+        <div class="tool-sidebar">
+            <div class="control-group">
+                <label>Upload Image</label>
+                <div class="file-upload" id="normal-upload">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Drag & drop or click to upload</span>
+                    <input type="file" accept="image/*" id="normal-file-input">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Generation Method</label>
+                <select id="normal-method">
+                    <option value="sobel" selected>Sobel Filter</option>
+                    <option value="scharr">Scharr Filter (Sharper)</option>
+                    <option value="prewitt">Prewitt Filter</option>
+                    <option value="emboss">Emboss Style</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Strength: <span id="normal-strength-value">1.0</span></label>
+                <input type="range" id="normal-strength" min="0.1" max="5" step="0.1" value="1.0">
+            </div>
+
+            <div class="control-group">
+                <label>Blur Radius: <span id="normal-blur-value">0</span>px</label>
+                <input type="range" id="normal-blur" min="0" max="10" value="0">
+            </div>
+
+            <div class="control-group">
+                <label>Height Source</label>
+                <select id="normal-height-source">
+                    <option value="luminance" selected>Luminance (Brightness)</option>
+                    <option value="average">RGB Average</option>
+                    <option value="max">Max Channel</option>
+                    <option value="red">Red Channel</option>
+                    <option value="green">Green Channel</option>
+                    <option value="blue">Blue Channel</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Options</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="normal-invert-r">
+                        <span>Invert Red (X)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="normal-invert-g">
+                        <span>Invert Green (Y)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="normal-tileable" checked>
+                        <span>Tileable edges</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="normal-normalize" checked>
+                        <span>Normalize vectors</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Z Component: <span id="normal-z-value">1.0</span></label>
+                <input type="range" id="normal-z" min="0.1" max="2" step="0.1" value="1.0">
+            </div>
+
+            <button class="btn btn-primary btn-block" id="normal-process">
+                <i class="fas fa-magic"></i> Generate Normal Map
+            </button>
+            <button class="btn btn-secondary btn-block" id="normal-download" disabled>
+                <i class="fas fa-download"></i> Download PNG
+            </button>
+        </div>
+
+        <div class="tool-preview">
+            <div class="preview-tabs">
+                <button class="preview-tab active" data-preview="original">Original</button>
+                <button class="preview-tab" data-preview="height">Height Map</button>
+                <button class="preview-tab" data-preview="result">Normal Map</button>
+                <button class="preview-tab" data-preview="3d">3D Preview</button>
+            </div>
+            <div class="preview-container" id="normal-preview">
+                <div class="preview-placeholder">
+                    <i class="fas fa-image"></i>
+                    <span>Upload an image to begin</span>
+                </div>
+                <canvas id="normal-canvas" style="display: none;"></canvas>
+                <canvas id="normal-3d-canvas" style="display: none;"></canvas>
+            </div>
+            <div class="preview-info" id="normal-info"></div>
+        </div>
+    </div>
+</div>

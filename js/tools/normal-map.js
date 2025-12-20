@@ -473,7 +473,4 @@ const NormalMapTool = {
     }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    NormalMapTool.init();
-});
+// Tool is initialized by App.loadView() when the view is loaded

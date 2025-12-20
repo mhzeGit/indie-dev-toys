@@ -1,0 +1,99 @@
+<!-- Background Remover Tool -->
+<div id="background-remover" class="tool-view">
+    <header class="tool-header">
+        <h1><i class="fas fa-eraser"></i> Background Remover</h1>
+        <p>Remove backgrounds using color-based selection or edge detection. Export with transparency.</p>
+    </header>
+    <div class="tool-layout">
+        <div class="tool-sidebar">
+            <div class="control-group">
+                <label>Upload Image</label>
+                <div class="file-upload" id="bgremove-upload">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Drag & drop or click to upload</span>
+                    <input type="file" accept="image/*" id="bgremove-file-input">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Removal Method</label>
+                <select id="bgremove-method">
+                    <option value="color">Color Selection</option>
+                    <option value="chroma">Chroma Key (Green/Blue Screen)</option>
+                    <option value="luminance">Luminance Threshold</option>
+                    <option value="flood">Magic Wand (Flood Fill)</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="bgremove-color-picker-group">
+                <label>Target Color</label>
+                <div class="color-picker-container">
+                    <input type="color" id="bgremove-color" value="#ffffff">
+                    <button class="btn btn-small" id="bgremove-pick-color">
+                        <i class="fas fa-eye-dropper"></i> Pick from Image
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-group" id="bgremove-chroma-group" style="display: none;">
+                <label>Chroma Key Color</label>
+                <select id="bgremove-chroma-color">
+                    <option value="green">Green Screen</option>
+                    <option value="blue">Blue Screen</option>
+                    <option value="custom">Custom Color</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Tolerance: <span id="bgremove-tolerance-value">30</span></label>
+                <input type="range" id="bgremove-tolerance" min="0" max="100" value="30">
+            </div>
+
+            <div class="control-group">
+                <label>Edge Softness: <span id="bgremove-softness-value">2</span>px</label>
+                <input type="range" id="bgremove-softness" min="0" max="20" value="2">
+            </div>
+
+            <div class="control-group">
+                <label>Options</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="bgremove-invert">
+                        <span>Invert selection</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="bgremove-feather" checked>
+                        <span>Feather edges</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="bgremove-despill">
+                        <span>Color despill</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="bgremove-process">
+                <i class="fas fa-magic"></i> Remove Background
+            </button>
+            <button class="btn btn-secondary btn-block" id="bgremove-download" disabled>
+                <i class="fas fa-download"></i> Download PNG
+            </button>
+        </div>
+
+        <div class="tool-preview">
+            <div class="preview-tabs">
+                <button class="preview-tab active" data-preview="original">Original</button>
+                <button class="preview-tab" data-preview="result">Result</button>
+                <button class="preview-tab" data-preview="mask">Mask</button>
+            </div>
+            <div class="preview-container transparency-bg" id="bgremove-preview">
+                <div class="preview-placeholder">
+                    <i class="fas fa-image"></i>
+                    <span>Upload an image to begin</span>
+                </div>
+                <canvas id="bgremove-canvas" style="display: none;"></canvas>
+            </div>
+            <div class="preview-info" id="bgremove-info"></div>
+        </div>
+    </div>
+</div>

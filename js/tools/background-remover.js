@@ -500,7 +500,4 @@ const BackgroundRemoverTool = {
     }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    BackgroundRemoverTool.init();
-});
+// Tool is initialized by App.loadView() when the view is loaded

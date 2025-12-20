@@ -1,0 +1,82 @@
+<!-- Texture Dilation Tool -->
+<div id="texture-dilation" class="tool-view">
+    <header class="tool-header">
+        <h1><i class="fas fa-expand-arrows-alt"></i> Texture Dilation</h1>
+        <p>Expand edge pixels to avoid seam artifacts in texture atlases and sprite sheets.</p>
+    </header>
+    <div class="tool-layout">
+        <div class="tool-sidebar">
+            <div class="control-group">
+                <label>Upload Image (with transparency)</label>
+                <div class="file-upload" id="dilation-upload">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Drag & drop or click to upload</span>
+                    <input type="file" accept="image/*" id="dilation-file-input">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Dilation Method</label>
+                <select id="dilation-method">
+                    <option value="standard">Standard (Push Outward)</option>
+                    <option value="average">Average Neighbor</option>
+                    <option value="nearest">Nearest Opaque</option>
+                    <option value="gaussian">Gaussian Weighted</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Dilation Radius: <span id="dilation-radius-value">8</span>px</label>
+                <input type="range" id="dilation-radius" min="1" max="64" value="8">
+            </div>
+
+            <div class="control-group">
+                <label>Iterations: <span id="dilation-iterations-value">1</span></label>
+                <input type="range" id="dilation-iterations" min="1" max="10" value="1">
+            </div>
+
+            <div class="control-group">
+                <label>Alpha Threshold: <span id="dilation-threshold-value">128</span></label>
+                <input type="range" id="dilation-threshold" min="1" max="255" value="128">
+            </div>
+
+            <div class="control-group">
+                <label>Options</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="dilation-preserve-alpha" checked>
+                        <span>Preserve original alpha</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="dilation-show-dilated">
+                        <span>Highlight dilated areas</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="dilation-process">
+                <i class="fas fa-expand"></i> Dilate Texture
+            </button>
+            <button class="btn btn-secondary btn-block" id="dilation-download" disabled>
+                <i class="fas fa-download"></i> Download PNG
+            </button>
+        </div>
+
+        <div class="tool-preview">
+            <div class="preview-tabs">
+                <button class="preview-tab active" data-preview="original">Original</button>
+                <button class="preview-tab" data-preview="result">Result</button>
+                <button class="preview-tab" data-preview="comparison">Side by Side</button>
+            </div>
+            <div class="preview-container transparency-bg" id="dilation-preview">
+                <div class="preview-placeholder">
+                    <i class="fas fa-image"></i>
+                    <span>Upload an image with transparency</span>
+                </div>
+                <canvas id="dilation-canvas" style="display: none;"></canvas>
+                <div id="dilation-comparison" class="comparison-view" style="display: none;"></div>
+            </div>
+            <div class="preview-info" id="dilation-info"></div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,88 @@
+<!-- Sprite Extractor Tool -->
+<div id="sprite-extractor" class="tool-view">
+    <div class="tool-header">
+        <h2><i class="fas fa-cut"></i> Sprite Sheet Extractor</h2>
+        <p>Automatically detect and extract individual sprites from a sprite sheet.</p>
+    </div>
+    <div class="tool-layout">
+        <div class="tool-sidebar">
+            <div class="control-group">
+                <label>Upload Sprite Sheet</label>
+                <div class="file-upload" id="extractor-upload">
+                    <i class="fas fa-image"></i>
+                    <span>Drop image or click to upload</span>
+                    <input type="file" accept="image/*" id="extractor-input" hidden>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Detection Mode</label>
+                <select id="extractor-mode">
+                    <option value="auto">Automatic Detection</option>
+                    <option value="grid">Grid-Based</option>
+                    <option value="manual">Manual Selection</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="extractor-grid-options" style="display: none;">
+                <label>Grid Size</label>
+                <div class="grid-size-inputs">
+                    <input type="number" id="extractor-cols" value="4" min="1" placeholder="Columns">
+                    <span>×</span>
+                    <input type="number" id="extractor-rows" value="4" min="1" placeholder="Rows">
+                </div>
+            </div>
+
+            <div class="control-group" id="extractor-auto-options">
+                <label>Detection Sensitivity: <span id="extractor-sensitivity-value">10</span></label>
+                <input type="range" id="extractor-sensitivity" min="1" max="50" value="10">
+                <small class="control-hint">Lower = more sprites detected</small>
+            </div>
+
+            <div class="control-group">
+                <label>Min Sprite Size: <span id="extractor-min-size-value">8</span>px</label>
+                <input type="range" id="extractor-min-size" min="1" max="64" value="8">
+            </div>
+
+            <div class="control-group">
+                <label>Options</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="extractor-trim" checked>
+                        <span>Trim transparent edges</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="extractor-padding">
+                        <span>Add 1px padding</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="extractor-detect">
+                <i class="fas fa-search"></i> Detect Sprites
+            </button>
+            <button class="btn btn-secondary btn-block" id="extractor-download-all" disabled>
+                <i class="fas fa-download"></i> Download All (<span id="extractor-count">0</span>)
+            </button>
+
+            <div class="control-group">
+                <label>Detected Sprites</label>
+                <div class="sprite-grid" id="extractor-sprite-grid">
+                    <div class="sprite-list-empty">No sprites detected yet</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tool-preview">
+            <div class="preview-container" id="extractor-preview">
+                <div class="preview-placeholder">
+                    <i class="fas fa-cut"></i>
+                    <span>Upload a sprite sheet to begin</span>
+                </div>
+                <canvas id="extractor-canvas" style="display: none;"></canvas>
+                <div id="extractor-bounds-overlay" class="bounds-overlay" style="display: none;"></div>
+            </div>
+            <div class="preview-info" id="extractor-info"></div>
+        </div>
+    </div>
+</div>

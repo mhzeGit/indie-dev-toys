@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indie Dev Toys - Developer Tools</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-toolbox"></i>
+                    <span>Indie Dev Toys</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-tool="dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+                <div class="nav-section">Texture Tools</div>
+                <a href="#" class="nav-item" data-tool="seamless-texture">
+                    <i class="fas fa-border-all"></i>
+                    <span>Seamless Texture</span>
+                </a>
+                <a href="#" class="nav-item" data-tool="background-remover">
+                    <i class="fas fa-eraser"></i>
+                    <span>Background Remover</span>
+                </a>
+                <a href="#" class="nav-item" data-tool="texture-dilation">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                    <span>Texture Dilation</span>
+                </a>
+                <a href="#" class="nav-item" data-tool="normal-map">
+                    <i class="fas fa-mountain"></i>
+                    <span>Normal Map Generator</span>
+                </a>
+                <a href="#" class="nav-item" data-tool="channel-packer">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Channel Packer</span>
+                </a>
+                <a href="#" class="nav-item" data-tool="atlas-packer">
+                    <i class="fas fa-th"></i>
+                    <span>Atlas Packer</span>
+                </a>
+                <a href="#" class="nav-item" data-tool="sprite-extractor">
+                    <i class="fas fa-cut"></i>
+                    <span>Sprite Extractor</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <span>v1.0.0</span>
+                <span>100% Browser-Based</span>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div id="dashboard" class="tool-view active">
+                <header class="tool-header">
+                    <h1>Welcome to Indie Dev Toys</h1>
+                    <p>A collection of practical tools for indie developers. All tools run entirely in your browser.</p>
+                </header>
+                <div class="dashboard-grid">
+                    <div class="tool-card" data-tool="seamless-texture">
+                        <div class="tool-card-icon">
+                            <i class="fas fa-border-all"></i>
+                        </div>
+                        <h3>Seamless Texture</h3>
+                        <p>Convert any image into a seamless, tileable texture with advanced blending options.</p>
+                        <button class="btn btn-primary">Open Tool</button>
+                    </div>
+                    <div class="tool-card" data-tool="background-remover">
+                        <div class="tool-card-icon">
+                            <i class="fas fa-eraser"></i>
+                        </div>
+                        <h3>Background Remover</h3>
+                        <p>Remove unwanted background areas and export with transparency.</p>
+                        <button class="btn btn-primary">Open Tool</button>
+                    </div>
+                    <div class="tool-card" data-tool="texture-dilation">
+                        <div class="tool-card-icon">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </div>
+                        <h3>Texture Dilation</h3>
+                        <p>Expand edge pixels to avoid artifacts in texture atlases and sprite sheets.</p>
+                        <button class="btn btn-primary">Open Tool</button>
+                    </div>
+                    <div class="tool-card" data-tool="normal-map">
+                        <div class="tool-card-icon">
+                            <i class="fas fa-mountain"></i>
+                        </div>
+                        <h3>Normal Map Generator</h3>
+                        <p>Generate high-quality normal maps from any color/diffuse texture.</p>
+                        <button class="btn btn-primary">Open Tool</button>
+                    </div>
+                    <div class="tool-card" data-tool="channel-packer">
+                        <div class="tool-card-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <h3>Channel Packer</h3>
+                        <p>Combine multiple textures into RGBA channels for Unity, Unreal, or custom workflows.</p>
+                        <button class="btn btn-primary">Open Tool</button>
+                    </div>
+                    <div class="tool-card" data-tool="atlas-packer">
+                        <div class="tool-card-icon">
+                            <i class="fas fa-th"></i>
+                        </div>
+                        <h3>Atlas Packer</h3>
+                        <p>Combine multiple sprites into a single texture atlas with grid or automatic packing.</p>
+                        <button class="btn btn-primary">Open Tool</button>
+                    </div>
+                    <div class="tool-card" data-tool="sprite-extractor">
+                        <div class="tool-card-icon">
+                            <i class="fas fa-cut"></i>
+                        </div>
+                        <h3>Sprite Extractor</h3>
+                        <p>Automatically detect and extract individual sprites from a sprite sheet.</p>
+                        <button class="btn btn-primary">Open Tool</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seamless Texture Tool -->
+            <div id="seamless-texture" class="tool-view">
+                <header class="tool-header">
+                    <h1><i class="fas fa-border-all"></i> Seamless Texture Generator</h1>
+                    <p>Convert images into seamless, tileable textures with advanced blending algorithms.</p>
+                </header>
+                <div class="tool-layout">
+                    <div class="tool-sidebar">
+                        <div class="control-group">
+                            <label>Upload Image</label>
+                            <div class="file-upload" id="seamless-upload">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Drag & drop or click to upload</span>
+                                <input type="file" accept="image/*" id="seamless-file-input">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Blending Method</label>
+                            <select id="seamless-method">
+                                <option value="mirror">Mirror Blend (Method 1)</option>
+                                <option value="linear" selected>Linear Blend (Method 2)</option>
+                                <option value="cosine">Cosine Blend (Method 3)</option>
+                                <option value="advanced">Advanced Multi-Pass (Method 4)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Blend Size: <span id="seamless-blend-value">25</span>%</label>
+                            <input type="range" id="seamless-blend" min="5" max="50" value="25">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Pre-Processing</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="seamless-normalize">
+                                    <span>Normalize brightness</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="seamless-average-edges">
+                                    <span>Average edge colors</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Averaging Intensity: <span id="seamless-avg-value">20</span></label>
+                            <input type="range" id="seamless-avg-intensity" min="0" max="100" value="20">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Pre-Crop (pixels)</label>
+                            <div class="crop-inputs">
+                                <input type="number" id="crop-left" placeholder="Left" value="0" min="0">
+                                <input type="number" id="crop-top" placeholder="Top" value="0" min="0">
+                                <input type="number" id="crop-right" placeholder="Right" value="0" min="0">
+                                <input type="number" id="crop-bottom" placeholder="Bottom" value="0" min="0">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Output Format</label>
+                            <select id="seamless-format">
+                                <option value="png">PNG (Lossless)</option>
+                                <option value="jpeg">JPEG</option>
+                                <option value="webp">WebP</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="seamless-quality-group">
+                            <label>Quality: <span id="seamless-quality-value">92</span>%</label>
+                            <input type="range" id="seamless-quality" min="1" max="100" value="92">
+                        </div>
+
+                        <button class="btn btn-primary btn-block" id="seamless-process">
+                            <i class="fas fa-cog"></i> Generate Seamless Texture
+                        </button>
+                        <button class="btn btn-secondary btn-block" id="seamless-download" disabled>
+                            <i class="fas fa-download"></i> Download Result
+                        </button>
+                    </div>
+
+                    <div class="tool-preview">
+                        <div class="preview-tabs">
+                            <button class="preview-tab active" data-preview="original">Original</button>
+                            <button class="preview-tab" data-preview="result">Result</button>
+                            <button class="preview-tab" data-preview="tiled">Tiled Preview</button>
+                        </div>
+                        <div class="preview-container" id="seamless-preview">
+                            <div class="preview-placeholder">
+                                <i class="fas fa-image"></i>
+                                <span>Upload an image to begin</span>
+                            </div>
+                            <canvas id="seamless-canvas" style="display: none;"></canvas>
+                            <div id="seamless-tiled-preview" class="tiled-preview" style="display: none;"></div>
+                        </div>
+                        <div class="preview-info" id="seamless-info"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Background Remover Tool -->
+            <div id="background-remover" class="tool-view">
+                <header class="tool-header">
+                    <h1><i class="fas fa-eraser"></i> Background Remover</h1>
+                    <p>Remove backgrounds using color-based selection or edge detection. Export with transparency.</p>
+                </header>
+                <div class="tool-layout">
+                    <div class="tool-sidebar">
+                        <div class="control-group">
+                            <label>Upload Image</label>
+                            <div class="file-upload" id="bgremove-upload">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Drag & drop or click to upload</span>
+                                <input type="file" accept="image/*" id="bgremove-file-input">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Removal Method</label>
+                            <select id="bgremove-method">
+                                <option value="color">Color Selection</option>
+                                <option value="chroma">Chroma Key (Green/Blue Screen)</option>
+                                <option value="luminance">Luminance Threshold</option>
+                                <option value="flood">Magic Wand (Flood Fill)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="bgremove-color-picker-group">
+                            <label>Target Color</label>
+                            <div class="color-picker-container">
+                                <input type="color" id="bgremove-color" value="#ffffff">
+                                <button class="btn btn-small" id="bgremove-pick-color">
+                                    <i class="fas fa-eye-dropper"></i> Pick from Image
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="bgremove-chroma-group" style="display: none;">
+                            <label>Chroma Key Color</label>
+                            <select id="bgremove-chroma-color">
+                                <option value="green">Green Screen</option>
+                                <option value="blue">Blue Screen</option>
+                                <option value="custom">Custom Color</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Tolerance: <span id="bgremove-tolerance-value">30</span></label>
+                            <input type="range" id="bgremove-tolerance" min="0" max="100" value="30">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Edge Softness: <span id="bgremove-softness-value">2</span>px</label>
+                            <input type="range" id="bgremove-softness" min="0" max="20" value="2">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Options</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="bgremove-invert">
+                                    <span>Invert selection</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="bgremove-feather" checked>
+                                    <span>Feather edges</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="bgremove-despill">
+                                    <span>Color despill</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" id="bgremove-process">
+                            <i class="fas fa-magic"></i> Remove Background
+                        </button>
+                        <button class="btn btn-secondary btn-block" id="bgremove-download" disabled>
+                            <i class="fas fa-download"></i> Download PNG
+                        </button>
+                    </div>
+
+                    <div class="tool-preview">
+                        <div class="preview-tabs">
+                            <button class="preview-tab active" data-preview="original">Original</button>
+                            <button class="preview-tab" data-preview="result">Result</button>
+                            <button class="preview-tab" data-preview="mask">Mask</button>
+                        </div>
+                        <div class="preview-container transparency-bg" id="bgremove-preview">
+                            <div class="preview-placeholder">
+                                <i class="fas fa-image"></i>
+                                <span>Upload an image to begin</span>
+                            </div>
+                            <canvas id="bgremove-canvas" style="display: none;"></canvas>
+                        </div>
+                        <div class="preview-info" id="bgremove-info"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Texture Dilation Tool -->
+            <div id="texture-dilation" class="tool-view">
+                <header class="tool-header">
+                    <h1><i class="fas fa-expand-arrows-alt"></i> Texture Dilation</h1>
+                    <p>Expand edge pixels to avoid seam artifacts in texture atlases and sprite sheets.</p>
+                </header>
+                <div class="tool-layout">
+                    <div class="tool-sidebar">
+                        <div class="control-group">
+                            <label>Upload Image (with transparency)</label>
+                            <div class="file-upload" id="dilation-upload">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Drag & drop or click to upload</span>
+                                <input type="file" accept="image/*" id="dilation-file-input">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Dilation Method</label>
+                            <select id="dilation-method">
+                                <option value="standard">Standard (Push Outward)</option>
+                                <option value="average">Average Neighbor</option>
+                                <option value="nearest">Nearest Opaque</option>
+                                <option value="gaussian">Gaussian Weighted</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Dilation Radius: <span id="dilation-radius-value">8</span>px</label>
+                            <input type="range" id="dilation-radius" min="1" max="64" value="8">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Iterations: <span id="dilation-iterations-value">1</span></label>
+                            <input type="range" id="dilation-iterations" min="1" max="10" value="1">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Alpha Threshold: <span id="dilation-threshold-value">128</span></label>
+                            <input type="range" id="dilation-threshold" min="1" max="255" value="128">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Options</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="dilation-preserve-alpha" checked>
+                                    <span>Preserve original alpha</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="dilation-show-dilated">
+                                    <span>Highlight dilated areas</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" id="dilation-process">
+                            <i class="fas fa-expand"></i> Dilate Texture
+                        </button>
+                        <button class="btn btn-secondary btn-block" id="dilation-download" disabled>
+                            <i class="fas fa-download"></i> Download PNG
+                        </button>
+                    </div>
+
+                    <div class="tool-preview">
+                        <div class="preview-tabs">
+                            <button class="preview-tab active" data-preview="original">Original</button>
+                            <button class="preview-tab" data-preview="result">Result</button>
+                            <button class="preview-tab" data-preview="comparison">Side by Side</button>
+                        </div>
+                        <div class="preview-container transparency-bg" id="dilation-preview">
+                            <div class="preview-placeholder">
+                                <i class="fas fa-image"></i>
+                                <span>Upload an image with transparency</span>
+                            </div>
+                            <canvas id="dilation-canvas" style="display: none;"></canvas>
+                            <div id="dilation-comparison" class="comparison-view" style="display: none;"></div>
+                        </div>
+                        <div class="preview-info" id="dilation-info"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Normal Map Generator Tool -->
+            <div id="normal-map" class="tool-view">
+                <header class="tool-header">
+                    <h1><i class="fas fa-mountain"></i> Normal Map Generator</h1>
+                    <p>Generate high-quality normal maps from diffuse/color textures using Sobel operators.</p>
+                </header>
+                <div class="tool-layout">
+                    <div class="tool-sidebar">
+                        <div class="control-group">
+                            <label>Upload Image</label>
+                            <div class="file-upload" id="normal-upload">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Drag & drop or click to upload</span>
+                                <input type="file" accept="image/*" id="normal-file-input">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Generation Method</label>
+                            <select id="normal-method">
+                                <option value="sobel" selected>Sobel Filter</option>
+                                <option value="scharr">Scharr Filter (Sharper)</option>
+                                <option value="prewitt">Prewitt Filter</option>
+                                <option value="emboss">Emboss Style</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Strength: <span id="normal-strength-value">1.0</span></label>
+                            <input type="range" id="normal-strength" min="0.1" max="5" step="0.1" value="1.0">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Blur Radius: <span id="normal-blur-value">0</span>px</label>
+                            <input type="range" id="normal-blur" min="0" max="10" value="0">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Height Source</label>
+                            <select id="normal-height-source">
+                                <option value="luminance" selected>Luminance (Brightness)</option>
+                                <option value="average">RGB Average</option>
+                                <option value="max">Max Channel</option>
+                                <option value="red">Red Channel</option>
+                                <option value="green">Green Channel</option>
+                                <option value="blue">Blue Channel</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Options</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="normal-invert-r">
+                                    <span>Invert Red (X)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="normal-invert-g">
+                                    <span>Invert Green (Y)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="normal-tileable" checked>
+                                    <span>Tileable edges</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="normal-normalize" checked>
+                                    <span>Normalize vectors</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Z Component: <span id="normal-z-value">1.0</span></label>
+                            <input type="range" id="normal-z" min="0.1" max="2" step="0.1" value="1.0">
+                        </div>
+
+                        <button class="btn btn-primary btn-block" id="normal-process">
+                            <i class="fas fa-magic"></i> Generate Normal Map
+                        </button>
+                        <button class="btn btn-secondary btn-block" id="normal-download" disabled>
+                            <i class="fas fa-download"></i> Download PNG
+                        </button>
+                    </div>
+
+                    <div class="tool-preview">
+                        <div class="preview-tabs">
+                            <button class="preview-tab active" data-preview="original">Original</button>
+                            <button class="preview-tab" data-preview="height">Height Map</button>
+                            <button class="preview-tab" data-preview="result">Normal Map</button>
+                            <button class="preview-tab" data-preview="3d">3D Preview</button>
+                        </div>
+                        <div class="preview-container" id="normal-preview">
+                            <div class="preview-placeholder">
+                                <i class="fas fa-image"></i>
+                                <span>Upload an image to begin</span>
+                            </div>
+                            <canvas id="normal-canvas" style="display: none;"></canvas>
+                            <canvas id="normal-3d-canvas" style="display: none;"></canvas>
+                        </div>
+                        <div class="preview-info" id="normal-info"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Channel Packer Tool -->
+            <div id="channel-packer" class="tool-view">
+                <div class="tool-header">
+                    <h2><i class="fas fa-layer-group"></i> Channel Packer</h2>
+                    <p>Combine multiple grayscale textures into a single RGBA texture for game engines.</p>
+                </div>
+                <div class="tool-layout">
+                    <div class="tool-sidebar">
+                        <div class="control-group">
+                            <label>Preset</label>
+                            <select id="packer-preset">
+                                <option value="unity-mask">Unity Mask Map (HDRP/URP)</option>
+                                <option value="unity-metallic">Unity Metallic (Standard)</option>
+                                <option value="unreal-orm">Unreal ORM Map</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+
+                        <div class="channel-inputs">
+                            <div class="channel-input" data-channel="r">
+                                <div class="channel-header">
+                                    <span class="channel-color red"></span>
+                                    <span class="channel-label" id="label-r">R: Metallic</span>
+                                </div>
+                                <div class="channel-dropzone" id="dropzone-r">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Drop or click</span>
+                                    <input type="file" accept="image/*" id="input-r" hidden>
+                                </div>
+                                <div class="channel-preview" id="preview-r" style="display: none;">
+                                    <canvas></canvas>
+                                    <button class="btn-remove" title="Remove"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="channel-options">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="invert-r">
+                                        <span>Invert</span>
+                                    </label>
+                                    <select id="source-r" class="channel-source">
+                                        <option value="r">Use Red</option>
+                                        <option value="g">Use Green</option>
+                                        <option value="b">Use Blue</option>
+                                        <option value="a">Use Alpha</option>
+                                        <option value="avg" selected>Use Average</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="channel-input" data-channel="g">
+                                <div class="channel-header">
+                                    <span class="channel-color green"></span>
+                                    <span class="channel-label" id="label-g">G: Ambient Occlusion</span>
+                                </div>
+                                <div class="channel-dropzone" id="dropzone-g">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Drop or click</span>
+                                    <input type="file" accept="image/*" id="input-g" hidden>
+                                </div>
+                                <div class="channel-preview" id="preview-g" style="display: none;">
+                                    <canvas></canvas>
+                                    <button class="btn-remove" title="Remove"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="channel-options">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="invert-g">
+                                        <span>Invert</span>
+                                    </label>
+                                    <select id="source-g" class="channel-source">
+                                        <option value="r">Use Red</option>
+                                        <option value="g">Use Green</option>
+                                        <option value="b">Use Blue</option>
+                                        <option value="a">Use Alpha</option>
+                                        <option value="avg" selected>Use Average</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="channel-input" data-channel="b">
+                                <div class="channel-header">
+                                    <span class="channel-color blue"></span>
+                                    <span class="channel-label" id="label-b">B: Detail Mask</span>
+                                </div>
+                                <div class="channel-dropzone" id="dropzone-b">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Drop or click</span>
+                                    <input type="file" accept="image/*" id="input-b" hidden>
+                                </div>
+                                <div class="channel-preview" id="preview-b" style="display: none;">
+                                    <canvas></canvas>
+                                    <button class="btn-remove" title="Remove"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="channel-options">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="invert-b">
+                                        <span>Invert</span>
+                                    </label>
+                                    <select id="source-b" class="channel-source">
+                                        <option value="r">Use Red</option>
+                                        <option value="g">Use Green</option>
+                                        <option value="b">Use Blue</option>
+                                        <option value="a">Use Alpha</option>
+                                        <option value="avg" selected>Use Average</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="channel-input" data-channel="a">
+                                <div class="channel-header">
+                                    <span class="channel-color alpha"></span>
+                                    <span class="channel-label" id="label-a">A: Smoothness</span>
+                                </div>
+                                <div class="channel-dropzone" id="dropzone-a">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Drop or click</span>
+                                    <input type="file" accept="image/*" id="input-a" hidden>
+                                </div>
+                                <div class="channel-preview" id="preview-a" style="display: none;">
+                                    <canvas></canvas>
+                                    <button class="btn-remove" title="Remove"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="channel-options">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="invert-a">
+                                        <span>Invert</span>
+                                    </label>
+                                    <select id="source-a" class="channel-source">
+                                        <option value="r">Use Red</option>
+                                        <option value="g">Use Green</option>
+                                        <option value="b">Use Blue</option>
+                                        <option value="a">Use Alpha</option>
+                                        <option value="avg" selected>Use Average</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Output Size</label>
+                            <select id="packer-size">
+                                <option value="source">Match First Input</option>
+                                <option value="256">256 x 256</option>
+                                <option value="512">512 x 512</option>
+                                <option value="1024" selected>1024 x 1024</option>
+                                <option value="2048">2048 x 2048</option>
+                                <option value="4096">4096 x 4096</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Default Fill Value: <span id="packer-fill-value">0</span></label>
+                            <input type="range" id="packer-fill" min="0" max="255" step="1" value="0">
+                            <small class="control-hint">Value for empty channels (0 = black, 255 = white)</small>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" id="packer-process">
+                            <i class="fas fa-layer-group"></i> Pack Channels
+                        </button>
+                        <button class="btn btn-secondary btn-block" id="packer-download" disabled>
+                            <i class="fas fa-download"></i> Download PNG
+                        </button>
+                    </div>
+
+                    <div class="tool-preview">
+                        <div class="preview-tabs">
+                            <button class="preview-tab active" data-preview="combined">Combined</button>
+                            <button class="preview-tab" data-preview="r">R Channel</button>
+                            <button class="preview-tab" data-preview="g">G Channel</button>
+                            <button class="preview-tab" data-preview="b">B Channel</button>
+                            <button class="preview-tab" data-preview="a">A Channel</button>
+                        </div>
+                        <div class="preview-container" id="packer-preview">
+                            <div class="preview-placeholder">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Add textures and pack channels</span>
+                            </div>
+                            <canvas id="packer-canvas" style="display: none;"></canvas>
+                        </div>
+                        <div class="preview-info" id="packer-info"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Atlas Packer Tool -->
+            <div id="atlas-packer" class="tool-view">
+                <div class="tool-header">
+                    <h2><i class="fas fa-th"></i> Texture Atlas Packer</h2>
+                    <p>Combine multiple sprites into a single optimized texture atlas.</p>
+                </div>
+                <div class="tool-layout">
+                    <div class="tool-sidebar">
+                        <div class="control-group">
+                            <label>Add Sprites</label>
+                            <div class="file-upload" id="atlas-upload">
+                                <i class="fas fa-images"></i>
+                                <span>Drop images or click to upload</span>
+                                <small>Supports multiple files</small>
+                                <input type="file" accept="image/*" id="atlas-input" multiple hidden>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Packing Mode</label>
+                            <select id="atlas-mode">
+                                <option value="auto">Automatic (Bin Packing)</option>
+                                <option value="grid">Grid Layout</option>
+                                <option value="horizontal">Horizontal Strip</option>
+                                <option value="vertical">Vertical Strip</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="atlas-grid-options" style="display: none;">
+                            <label>Grid Columns</label>
+                            <input type="number" id="atlas-columns" value="4" min="1" max="20">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Max Atlas Size</label>
+                            <select id="atlas-max-size">
+                                <option value="512">512 x 512</option>
+                                <option value="1024">1024 x 1024</option>
+                                <option value="2048" selected>2048 x 2048</option>
+                                <option value="4096">4096 x 4096</option>
+                                <option value="8192">8192 x 8192</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Padding: <span id="atlas-padding-value">2</span>px</label>
+                            <input type="range" id="atlas-padding" min="0" max="16" value="2">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Options</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="atlas-power-of-two" checked>
+                                    <span>Power of 2 dimensions</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="atlas-trim">
+                                    <span>Trim transparent pixels</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Sprites (<span id="atlas-count">0</span>)</label>
+                            <div class="sprite-list" id="atlas-sprite-list">
+                                <div class="sprite-list-empty">No sprites added yet</div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" id="atlas-pack">
+                            <i class="fas fa-th"></i> Pack Atlas
+                        </button>
+                        <button class="btn btn-secondary btn-block" id="atlas-download" disabled>
+                            <i class="fas fa-download"></i> Download Atlas
+                        </button>
+                        <button class="btn btn-secondary btn-block" id="atlas-download-json" disabled>
+                            <i class="fas fa-file-code"></i> Download JSON Data
+                        </button>
+                    </div>
+
+                    <div class="tool-preview">
+                        <div class="preview-container" id="atlas-preview">
+                            <div class="preview-placeholder">
+                                <i class="fas fa-th"></i>
+                                <span>Add sprites and pack atlas</span>
+                            </div>
+                            <canvas id="atlas-canvas" style="display: none;"></canvas>
+                        </div>
+                        <div class="preview-info" id="atlas-info"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sprite Extractor Tool -->
+            <div id="sprite-extractor" class="tool-view">
+                <div class="tool-header">
+                    <h2><i class="fas fa-cut"></i> Sprite Sheet Extractor</h2>
+                    <p>Automatically detect and extract individual sprites from a sprite sheet.</p>
+                </div>
+                <div class="tool-layout">
+                    <div class="tool-sidebar">
+                        <div class="control-group">
+                            <label>Upload Sprite Sheet</label>
+                            <div class="file-upload" id="extractor-upload">
+                                <i class="fas fa-image"></i>
+                                <span>Drop image or click to upload</span>
+                                <input type="file" accept="image/*" id="extractor-input" hidden>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Detection Mode</label>
+                            <select id="extractor-mode">
+                                <option value="auto">Automatic Detection</option>
+                                <option value="grid">Grid-Based</option>
+                                <option value="manual">Manual Selection</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="extractor-grid-options" style="display: none;">
+                            <label>Grid Size</label>
+                            <div class="grid-size-inputs">
+                                <input type="number" id="extractor-cols" value="4" min="1" placeholder="Columns">
+                                <span>×</span>
+                                <input type="number" id="extractor-rows" value="4" min="1" placeholder="Rows">
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="extractor-auto-options">
+                            <label>Detection Sensitivity: <span id="extractor-sensitivity-value">10</span></label>
+                            <input type="range" id="extractor-sensitivity" min="1" max="50" value="10">
+                            <small class="control-hint">Lower = more sprites detected</small>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Min Sprite Size: <span id="extractor-min-size-value">8</span>px</label>
+                            <input type="range" id="extractor-min-size" min="1" max="64" value="8">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Options</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="extractor-trim" checked>
+                                    <span>Trim transparent edges</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="extractor-padding">
+                                    <span>Add 1px padding</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" id="extractor-detect">
+                            <i class="fas fa-search"></i> Detect Sprites
+                        </button>
+                        <button class="btn btn-secondary btn-block" id="extractor-download-all" disabled>
+                            <i class="fas fa-download"></i> Download All (<span id="extractor-count">0</span>)
+                        </button>
+
+                        <div class="control-group">
+                            <label>Detected Sprites</label>
+                            <div class="sprite-grid" id="extractor-sprite-grid">
+                                <div class="sprite-list-empty">No sprites detected yet</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tool-preview">
+                        <div class="preview-container" id="extractor-preview">
+                            <div class="preview-placeholder">
+                                <i class="fas fa-cut"></i>
+                                <span>Upload a sprite sheet to begin</span>
+                            </div>
+                            <canvas id="extractor-canvas" style="display: none;"></canvas>
+                            <div id="extractor-bounds-overlay" class="bounds-overlay" style="display: none;"></div>
+                        </div>
+                        <div class="preview-info" id="extractor-info"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-cog fa-spin"></i>
+            <span>Processing...</span>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/image-processor.js"></script>
+    <script src="js/tools/seamless-texture.js"></script>
+    <script src="js/tools/background-remover.js"></script>
+    <script src="js/tools/texture-dilation.js"></script>
+    <script src="js/tools/normal-map.js"></script>
+    <script src="js/tools/channel-packer.js"></script>
+    <script src="js/tools/atlas-packer.js"></script>
+    <script src="js/tools/sprite-extractor.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

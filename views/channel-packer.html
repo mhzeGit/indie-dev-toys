@@ -1,0 +1,181 @@
+<!-- Channel Packer Tool -->
+<div id="channel-packer" class="tool-view">
+    <div class="tool-header">
+        <h2><i class="fas fa-layer-group"></i> Channel Packer</h2>
+        <p>Combine multiple grayscale textures into a single RGBA texture for game engines.</p>
+    </div>
+    <div class="tool-layout">
+        <div class="tool-sidebar">
+            <div class="control-group">
+                <label>Preset</label>
+                <select id="packer-preset">
+                    <option value="unity-mask">Unity Mask Map (HDRP/URP)</option>
+                    <option value="unity-metallic">Unity Metallic (Standard)</option>
+                    <option value="unreal-orm">Unreal ORM Map</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+
+            <div class="channel-inputs">
+                <div class="channel-input" data-channel="r">
+                    <div class="channel-header">
+                        <span class="channel-color red"></span>
+                        <span class="channel-label" id="label-r">R: Metallic</span>
+                    </div>
+                    <div class="channel-dropzone" id="dropzone-r">
+                        <i class="fas fa-plus"></i>
+                        <span>Drop or click</span>
+                        <input type="file" accept="image/*" id="input-r" hidden>
+                    </div>
+                    <div class="channel-preview" id="preview-r" style="display: none;">
+                        <canvas></canvas>
+                        <button class="btn-remove" title="Remove"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="channel-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="invert-r">
+                            <span>Invert</span>
+                        </label>
+                        <select id="source-r" class="channel-source">
+                            <option value="r">Use Red</option>
+                            <option value="g">Use Green</option>
+                            <option value="b">Use Blue</option>
+                            <option value="a">Use Alpha</option>
+                            <option value="avg" selected>Use Average</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="channel-input" data-channel="g">
+                    <div class="channel-header">
+                        <span class="channel-color green"></span>
+                        <span class="channel-label" id="label-g">G: Ambient Occlusion</span>
+                    </div>
+                    <div class="channel-dropzone" id="dropzone-g">
+                        <i class="fas fa-plus"></i>
+                        <span>Drop or click</span>
+                        <input type="file" accept="image/*" id="input-g" hidden>
+                    </div>
+                    <div class="channel-preview" id="preview-g" style="display: none;">
+                        <canvas></canvas>
+                        <button class="btn-remove" title="Remove"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="channel-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="invert-g">
+                            <span>Invert</span>
+                        </label>
+                        <select id="source-g" class="channel-source">
+                            <option value="r">Use Red</option>
+                            <option value="g">Use Green</option>
+                            <option value="b">Use Blue</option>
+                            <option value="a">Use Alpha</option>
+                            <option value="avg" selected>Use Average</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="channel-input" data-channel="b">
+                    <div class="channel-header">
+                        <span class="channel-color blue"></span>
+                        <span class="channel-label" id="label-b">B: Detail Mask</span>
+                    </div>
+                    <div class="channel-dropzone" id="dropzone-b">
+                        <i class="fas fa-plus"></i>
+                        <span>Drop or click</span>
+                        <input type="file" accept="image/*" id="input-b" hidden>
+                    </div>
+                    <div class="channel-preview" id="preview-b" style="display: none;">
+                        <canvas></canvas>
+                        <button class="btn-remove" title="Remove"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="channel-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="invert-b">
+                            <span>Invert</span>
+                        </label>
+                        <select id="source-b" class="channel-source">
+                            <option value="r">Use Red</option>
+                            <option value="g">Use Green</option>
+                            <option value="b">Use Blue</option>
+                            <option value="a">Use Alpha</option>
+                            <option value="avg" selected>Use Average</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="channel-input" data-channel="a">
+                    <div class="channel-header">
+                        <span class="channel-color alpha"></span>
+                        <span class="channel-label" id="label-a">A: Smoothness</span>
+                    </div>
+                    <div class="channel-dropzone" id="dropzone-a">
+                        <i class="fas fa-plus"></i>
+                        <span>Drop or click</span>
+                        <input type="file" accept="image/*" id="input-a" hidden>
+                    </div>
+                    <div class="channel-preview" id="preview-a" style="display: none;">
+                        <canvas></canvas>
+                        <button class="btn-remove" title="Remove"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="channel-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="invert-a">
+                            <span>Invert</span>
+                        </label>
+                        <select id="source-a" class="channel-source">
+                            <option value="r">Use Red</option>
+                            <option value="g">Use Green</option>
+                            <option value="b">Use Blue</option>
+                            <option value="a">Use Alpha</option>
+                            <option value="avg" selected>Use Average</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Output Size</label>
+                <select id="packer-size">
+                    <option value="source">Match First Input</option>
+                    <option value="256">256 x 256</option>
+                    <option value="512">512 x 512</option>
+                    <option value="1024" selected>1024 x 1024</option>
+                    <option value="2048">2048 x 2048</option>
+                    <option value="4096">4096 x 4096</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Default Fill Value: <span id="packer-fill-value">0</span></label>
+                <input type="range" id="packer-fill" min="0" max="255" step="1" value="0">
+                <small class="control-hint">Value for empty channels (0 = black, 255 = white)</small>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="packer-process">
+                <i class="fas fa-layer-group"></i> Pack Channels
+            </button>
+            <button class="btn btn-secondary btn-block" id="packer-download" disabled>
+                <i class="fas fa-download"></i> Download PNG
+            </button>
+        </div>
+
+        <div class="tool-preview">
+            <div class="preview-tabs">
+                <button class="preview-tab active" data-preview="combined">Combined</button>
+                <button class="preview-tab" data-preview="r">R Channel</button>
+                <button class="preview-tab" data-preview="g">G Channel</button>
+                <button class="preview-tab" data-preview="b">B Channel</button>
+                <button class="preview-tab" data-preview="a">A Channel</button>
+            </div>
+            <div class="preview-container" id="packer-preview">
+                <div class="preview-placeholder">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Add textures and pack channels</span>
+                </div>
+                <canvas id="packer-canvas" style="display: none;"></canvas>
+            </div>
+            <div class="preview-info" id="packer-info"></div>
+        </div>
+    </div>
+</div>

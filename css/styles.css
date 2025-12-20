@@ -1037,3 +1037,212 @@ input[type="color"] {
         grid-template-columns: 1fr;
     }
 }
+
+/* ================================
+   Atlas Packer Styles
+   ================================ */
+.sprite-list {
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.sprite-list-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.sprite-list-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--transition-fast);
+}
+
+.sprite-list-item:last-child {
+    border-bottom: none;
+}
+
+.sprite-list-item:hover {
+    background: var(--bg-hover);
+}
+
+.sprite-list-item canvas {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    background: repeating-conic-gradient(#333 0% 25%, #444 0% 50%) 50% / 8px 8px;
+    border-radius: var(--border-radius-sm);
+}
+
+.sprite-list-item .sprite-name {
+    flex: 1;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sprite-list-item .sprite-size {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.sprite-list-item .sprite-scale {
+    width: 50px;
+    padding: 2px 4px;
+    font-size: 11px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.sprite-list-item .btn-remove {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all var(--transition-fast);
+}
+
+.sprite-list-item .btn-remove:hover {
+    background: var(--accent-danger);
+    color: white;
+}
+
+/* ================================
+   Sprite Extractor Styles
+   ================================ */
+.grid-size-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.grid-size-inputs input {
+    width: 70px;
+}
+
+.grid-size-inputs span {
+    color: var(--text-muted);
+}
+
+.sprite-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    padding: 8px;
+}
+
+.sprite-grid-item {
+    position: relative;
+    aspect-ratio: 1;
+    background: repeating-conic-gradient(#333 0% 25%, #444 0% 50%) 50% / 8px 8px;
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all var(--transition-fast);
+}
+
+.sprite-grid-item:hover {
+    border-color: var(--accent-primary);
+}
+
+.sprite-grid-item.selected {
+    border-color: var(--accent-success);
+}
+
+.sprite-grid-item canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.sprite-grid-item .sprite-index {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+.bounds-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.bounds-rect {
+    position: absolute;
+    border: 2px solid var(--accent-primary);
+    background: rgba(88, 166, 255, 0.1);
+    pointer-events: auto;
+    cursor: move;
+    box-sizing: border-box;
+}
+
+.bounds-rect:hover {
+    background: rgba(88, 166, 255, 0.2);
+}
+
+.bounds-rect.selected {
+    border-color: var(--accent-success);
+    background: rgba(63, 185, 80, 0.15);
+}
+
+.bounds-rect .bounds-label {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    background: var(--accent-primary);
+    color: white;
+    font-size: 10px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    white-space: nowrap;
+}
+
+.bounds-rect .resize-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--accent-primary);
+    border: 1px solid white;
+    border-radius: 2px;
+}
+
+.bounds-rect .resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+.bounds-rect .resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+.bounds-rect .resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+.bounds-rect .resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
+
+.preview-container {
+    position: relative;
+}

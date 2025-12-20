@@ -284,11 +284,11 @@ const ChannelPacker = {
         // Check if at least one image is loaded
         const hasAnyImage = Object.values(this.images).some(img => img !== null);
         if (!hasAnyImage) {
-            showToast('Please add at least one texture', 'error');
+            Utils.showToast('Please add at least one texture', 'error');
             return;
         }
 
-        showLoading(true);
+        Utils.showLoading('Packing channels...');
 
         setTimeout(() => {
             try {
@@ -392,14 +392,17 @@ const ChannelPacker = {
                 }
                 
                 this.refreshCurrentPreview();
-                this.zoomController.reset();
+                if (this.zoomController) {
+                    this.zoomController.setContent(canvas);
+                    this.zoomController.resetZoom();
+                }
                 
-                showToast('Channels packed successfully!', 'success');
+                Utils.showToast('Channels packed successfully!', 'success');
             } catch (error) {
                 console.error('Processing error:', error);
-                showToast('Error processing images: ' + error.message, 'error');
+                Utils.showToast('Error processing images: ' + error.message, 'error');
             } finally {
-                showLoading(false);
+                Utils.hideLoading();
             }
         }, 50);
     },
@@ -431,7 +434,7 @@ const ChannelPacker = {
 
     downloadResult() {
         if (!this.result) {
-            showToast('No result to download', 'error');
+            Utils.showToast('No result to download', 'error');
             return;
         }
         
@@ -443,11 +446,8 @@ const ChannelPacker = {
         link.href = this.result.toDataURL('image/png');
         link.click();
         
-        showToast('Image downloaded!', 'success');
+        Utils.showToast('Image downloaded!', 'success');
     }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    ChannelPacker.init();
-});
+// Tool is initialized by App.loadView() when the view is loaded

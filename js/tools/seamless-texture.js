@@ -343,7 +343,4 @@ const SeamlessTextureTool = {
     }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    SeamlessTextureTool.init();
-});
+// Tool is initialized by App.loadView() when the view is loaded
