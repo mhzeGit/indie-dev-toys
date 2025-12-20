@@ -9,6 +9,8 @@ const NormalMapTool = {
     heightMapData: null,
     resultImageData: null,
     currentPreview: 'original',
+    hasProcessed: false,
+    zoomController: null,
 
     /**
      * Initialize the tool
@@ -16,6 +18,14 @@ const NormalMapTool = {
     init() {
         this.setupEventListeners();
         this.setupSliders();
+        this.setupZoom();
+    },
+
+    /**
+     * Setup zoom controller
+     */
+    setupZoom() {
+        this.zoomController = Utils.createZoomController('normal-preview');
     },
 
     /**
@@ -90,6 +100,7 @@ const NormalMapTool = {
             // Reset results
             this.heightMapData = null;
             this.resultImageData = null;
+            this.hasProcessed = false;
             
             // Show original in preview
             this.showOriginal();
@@ -123,6 +134,10 @@ const NormalMapTool = {
         canvas.style.display = 'block';
         canvas3d.style.display = 'none';
         
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
+        
         this.currentPreview = 'original';
         this.updatePreviewTabs();
     },
@@ -147,6 +162,10 @@ const NormalMapTool = {
         canvas.style.display = 'block';
         canvas3d.style.display = 'none';
         
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
+        
         this.currentPreview = 'height';
         this.updatePreviewTabs();
     },
@@ -169,6 +188,10 @@ const NormalMapTool = {
         
         canvas.style.display = 'block';
         canvas3d.style.display = 'none';
+        
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
         
         this.currentPreview = 'result';
         this.updatePreviewTabs();
@@ -193,6 +216,10 @@ const NormalMapTool = {
         
         canvas.style.display = 'none';
         canvas3d.style.display = 'block';
+        
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas3d);
+        }
         
         this.currentPreview = '3d';
         this.updatePreviewTabs();
@@ -351,8 +378,14 @@ const NormalMapTool = {
                 zComponent
             });
             
-            // Show result
-            this.showResult();
+            // Show result only on first process, otherwise update current view
+            if (!this.hasProcessed) {
+                this.showResult();
+                this.hasProcessed = true;
+            } else {
+                // Update the current preview with new data
+                this.refreshCurrentPreview();
+            }
             
             // Enable download
             document.getElementById('normal-download').disabled = false;
@@ -396,6 +429,47 @@ const NormalMapTool = {
      */
     updateInfo(text) {
         document.getElementById('normal-info').textContent = text;
+    },
+
+    /**
+     * Refresh current preview without switching tabs
+     */
+    refreshCurrentPreview() {
+        const canvas = document.getElementById('normal-canvas');
+        const canvas3d = document.getElementById('normal-3d-canvas');
+        
+        switch (this.currentPreview) {
+            case 'height':
+                if (this.heightMapData) {
+                    canvas.width = this.heightMapData.width;
+                    canvas.height = this.heightMapData.height;
+                    Utils.putImageData(canvas, this.heightMapData);
+                    if (this.zoomController) {
+                        this.zoomController.setContent(canvas);
+                    }
+                }
+                break;
+            case 'result':
+                if (this.resultImageData) {
+                    canvas.width = this.resultImageData.width;
+                    canvas.height = this.resultImageData.height;
+                    Utils.putImageData(canvas, this.resultImageData);
+                    if (this.zoomController) {
+                        this.zoomController.setContent(canvas);
+                    }
+                }
+                break;
+            case '3d':
+                if (this.resultImageData) {
+                    canvas3d.width = this.resultImageData.width;
+                    canvas3d.height = this.resultImageData.height;
+                    this.render3DPreview();
+                    if (this.zoomController) {
+                        this.zoomController.setContent(canvas3d);
+                    }
+                }
+                break;
+        }
     }
 };
 

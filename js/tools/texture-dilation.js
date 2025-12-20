@@ -8,6 +8,8 @@ const TextureDilationTool = {
     originalImageData: null,
     resultImageData: null,
     currentPreview: 'original',
+    hasProcessed: false,
+    zoomController: null,
 
     /**
      * Initialize the tool
@@ -15,6 +17,14 @@ const TextureDilationTool = {
     init() {
         this.setupEventListeners();
         this.setupSliders();
+        this.setupZoom();
+    },
+
+    /**
+     * Setup zoom controller
+     */
+    setupZoom() {
+        this.zoomController = Utils.createZoomController('dilation-preview');
     },
 
     /**
@@ -69,6 +79,7 @@ const TextureDilationTool = {
             
             // Reset result
             this.resultImageData = null;
+            this.hasProcessed = false;
             
             // Show original in preview
             this.showOriginal();
@@ -124,6 +135,10 @@ const TextureDilationTool = {
         canvas.style.display = 'block';
         comparison.style.display = 'none';
         
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
+        
         this.currentPreview = 'original';
         this.updatePreviewTabs();
     },
@@ -146,6 +161,10 @@ const TextureDilationTool = {
         
         canvas.style.display = 'block';
         comparison.style.display = 'none';
+        
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
         
         this.currentPreview = 'result';
         this.updatePreviewTabs();
@@ -261,8 +280,14 @@ const TextureDilationTool = {
                 this.highlightDilatedAreas();
             }
             
-            // Show result
-            this.showResult();
+            // Show result only on first process, otherwise update current view
+            if (!this.hasProcessed) {
+                this.showResult();
+                this.hasProcessed = true;
+            } else {
+                // Update the current preview with new data
+                this.refreshCurrentPreview();
+            }
             
             // Enable download
             document.getElementById('dilation-download').disabled = false;
@@ -373,6 +398,29 @@ const TextureDilationTool = {
      */
     updateInfo(text) {
         document.getElementById('dilation-info').textContent = text;
+    },
+
+    /**
+     * Refresh current preview without switching tabs
+     */
+    refreshCurrentPreview() {
+        const canvas = document.getElementById('dilation-canvas');
+        
+        switch (this.currentPreview) {
+            case 'result':
+                if (this.resultImageData) {
+                    canvas.width = this.resultImageData.width;
+                    canvas.height = this.resultImageData.height;
+                    Utils.putImageData(canvas, this.resultImageData);
+                    if (this.zoomController) {
+                        this.zoomController.setContent(canvas);
+                    }
+                }
+                break;
+            case 'comparison':
+                this.showComparison();
+                break;
+        }
     }
 };
 

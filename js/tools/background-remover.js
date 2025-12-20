@@ -11,6 +11,8 @@ const BackgroundRemoverTool = {
     currentPreview: 'original',
     isPickingColor: false,
     floodFillStart: null,
+    hasProcessed: false,
+    zoomController: null,
 
     /**
      * Initialize the tool
@@ -18,6 +20,14 @@ const BackgroundRemoverTool = {
     init() {
         this.setupEventListeners();
         this.setupSliders();
+        this.setupZoom();
+    },
+
+    /**
+     * Setup zoom controller
+     */
+    setupZoom() {
+        this.zoomController = Utils.createZoomController('bgremove-preview');
     },
 
     /**
@@ -40,9 +50,12 @@ const BackgroundRemoverTool = {
             this.startColorPicking();
         });
 
-        // Canvas click for color picking / flood fill
-        document.getElementById('bgremove-canvas').addEventListener('click', (e) => {
-            this.onCanvasClick(e);
+        // Container click for color picking / flood fill (use container to work with zoom)
+        document.getElementById('bgremove-preview').addEventListener('click', (e) => {
+            // Only handle if in picking mode
+            if (this.isPickingColor || document.getElementById('bgremove-method').value === 'flood') {
+                this.onCanvasClick(e);
+            }
         });
 
         // Chroma key color change
@@ -129,6 +142,7 @@ const BackgroundRemoverTool = {
             this.resultImageData = null;
             this.maskImageData = null;
             this.floodFillStart = null;
+            this.hasProcessed = false;
             
             // Show original in preview
             this.showOriginal();
@@ -155,7 +169,7 @@ const BackgroundRemoverTool = {
         }
         
         this.isPickingColor = true;
-        document.getElementById('bgremove-canvas').style.cursor = 'crosshair';
+        document.getElementById('bgremove-preview').style.cursor = 'crosshair';
         Utils.showToast('Click on the image to pick a color', 'success');
     },
 
@@ -166,13 +180,26 @@ const BackgroundRemoverTool = {
         if (!this.originalImageData) return;
         
         const canvas = document.getElementById('bgremove-canvas');
-        const rect = canvas.getBoundingClientRect();
+        const container = document.getElementById('bgremove-preview');
+        const containerRect = container.getBoundingClientRect();
         
-        // Calculate actual pixel coordinates
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = Math.floor((e.clientX - rect.left) * scaleX);
-        const y = Math.floor((e.clientY - rect.top) * scaleY);
+        // Get click position relative to container center
+        const clickX = e.clientX - containerRect.left - containerRect.width / 2;
+        const clickY = e.clientY - containerRect.top - containerRect.height / 2;
+        
+        // Account for zoom and pan if zoom controller exists
+        let adjustedX = clickX;
+        let adjustedY = clickY;
+        
+        if (this.zoomController) {
+            // Reverse the transform: subtract pan, divide by zoom
+            adjustedX = (clickX - this.zoomController.panX) / this.zoomController.zoom;
+            adjustedY = (clickY - this.zoomController.panY) / this.zoomController.zoom;
+        }
+        
+        // Convert to canvas pixel coordinates (canvas is centered)
+        const x = Math.floor(adjustedX + canvas.width / 2);
+        const y = Math.floor(adjustedY + canvas.height / 2);
         
         if (x < 0 || x >= this.originalImageData.width || y < 0 || y >= this.originalImageData.height) {
             return;
@@ -193,7 +220,7 @@ const BackgroundRemoverTool = {
             }
             
             this.isPickingColor = false;
-            canvas.style.cursor = 'default';
+            document.getElementById('bgremove-preview').style.cursor = 'grab';
         }
     },
 
@@ -211,6 +238,10 @@ const BackgroundRemoverTool = {
         
         placeholder.style.display = 'none';
         canvas.style.display = 'block';
+        
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
         
         this.currentPreview = 'original';
         this.updatePreviewTabs();
@@ -231,6 +262,10 @@ const BackgroundRemoverTool = {
         canvas.height = this.resultImageData.height;
         Utils.putImageData(canvas, this.resultImageData);
         
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
+        
         this.currentPreview = 'result';
         this.updatePreviewTabs();
     },
@@ -249,6 +284,10 @@ const BackgroundRemoverTool = {
         canvas.width = this.maskImageData.width;
         canvas.height = this.maskImageData.height;
         Utils.putImageData(canvas, this.maskImageData);
+        
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
         
         this.currentPreview = 'mask';
         this.updatePreviewTabs();
@@ -343,8 +382,14 @@ const BackgroundRemoverTool = {
             // Generate mask preview
             this.generateMask();
             
-            // Show result
-            this.showResult();
+            // Show result only on first process, otherwise update current view
+            if (!this.hasProcessed) {
+                this.showResult();
+                this.hasProcessed = true;
+            } else {
+                // Update the current preview with new data
+                this.refreshCurrentPreview();
+            }
             
             // Enable download
             document.getElementById('bgremove-download').disabled = false;
@@ -422,6 +467,36 @@ const BackgroundRemoverTool = {
      */
     updateInfo(text) {
         document.getElementById('bgremove-info').textContent = text;
+    },
+
+    /**
+     * Refresh current preview without switching tabs
+     */
+    refreshCurrentPreview() {
+        const canvas = document.getElementById('bgremove-canvas');
+        
+        switch (this.currentPreview) {
+            case 'result':
+                if (this.resultImageData) {
+                    canvas.width = this.resultImageData.width;
+                    canvas.height = this.resultImageData.height;
+                    Utils.putImageData(canvas, this.resultImageData);
+                    if (this.zoomController) {
+                        this.zoomController.setContent(canvas);
+                    }
+                }
+                break;
+            case 'mask':
+                if (this.maskImageData) {
+                    canvas.width = this.maskImageData.width;
+                    canvas.height = this.maskImageData.height;
+                    Utils.putImageData(canvas, this.maskImageData);
+                    if (this.zoomController) {
+                        this.zoomController.setContent(canvas);
+                    }
+                }
+                break;
+        }
     }
 };
 

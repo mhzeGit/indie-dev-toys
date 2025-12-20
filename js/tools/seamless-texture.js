@@ -8,6 +8,8 @@ const SeamlessTextureTool = {
     originalImageData: null,
     resultImageData: null,
     currentPreview: 'original',
+    hasProcessed: false,
+    zoomController: null,
 
     /**
      * Initialize the tool
@@ -15,6 +17,14 @@ const SeamlessTextureTool = {
     init() {
         this.setupEventListeners();
         this.setupSliders();
+        this.setupZoom();
+    },
+
+    /**
+     * Setup zoom controller
+     */
+    setupZoom() {
+        this.zoomController = Utils.createZoomController('seamless-preview');
     },
 
     /**
@@ -105,6 +115,10 @@ const SeamlessTextureTool = {
         canvas.style.display = 'block';
         tiledPreview.style.display = 'none';
         
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
+        
         this.currentPreview = 'original';
         this.updatePreviewTabs();
     },
@@ -127,6 +141,10 @@ const SeamlessTextureTool = {
         
         canvas.style.display = 'block';
         tiledPreview.style.display = 'none';
+        
+        if (this.zoomController) {
+            this.zoomController.setContent(canvas);
+        }
         
         this.currentPreview = 'result';
         this.updatePreviewTabs();
@@ -249,8 +267,14 @@ const SeamlessTextureTool = {
                     this.resultImageData = ImageProcessor.seamlessLinear(imageData, blendSize);
             }
             
-            // Show result
-            this.showResult();
+            // Show result only on first process, otherwise update current view
+            if (!this.hasProcessed) {
+                this.showResult();
+                this.hasProcessed = true;
+            } else {
+                // Update the current preview with new data
+                this.refreshCurrentPreview();
+            }
             
             // Enable download
             document.getElementById('seamless-download').disabled = false;
@@ -294,6 +318,28 @@ const SeamlessTextureTool = {
      */
     updateInfo(text) {
         document.getElementById('seamless-info').textContent = text;
+    },
+
+    /**
+     * Refresh current preview without switching tabs
+     */
+    refreshCurrentPreview() {
+        switch (this.currentPreview) {
+            case 'result':
+                if (this.resultImageData) {
+                    const canvas = document.getElementById('seamless-canvas');
+                    canvas.width = this.resultImageData.width;
+                    canvas.height = this.resultImageData.height;
+                    Utils.putImageData(canvas, this.resultImageData);
+                    if (this.zoomController) {
+                        this.zoomController.setContent(canvas);
+                    }
+                }
+                break;
+            case 'tiled':
+                this.showTiled();
+                break;
+        }
     }
 };
 

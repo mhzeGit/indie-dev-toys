@@ -400,22 +400,34 @@ const ImageProcessor = {
         const tG = targetColor.g;
         const tB = targetColor.b;
         
-        const maxDist = Math.sqrt(255 * 255 * 3);
+        // Max possible distance in RGB space
+        const maxDist = Math.sqrt(255 * 255 * 3); // ~441.67
+        
+        // Convert tolerance (0-100) to a distance threshold
         const toleranceDist = (tolerance / 100) * maxDist;
+        
+        // Softness affects the transition zone
+        const softnessDist = (softness / 100) * maxDist * 0.5;
         
         for (let i = 0; i < result.data.length; i += 4) {
             const r = result.data[i];
             const g = result.data[i + 1];
             const b = result.data[i + 2];
             
+            // Calculate color distance from target
             const dist = Utils.colorDistance(r, g, b, tR, tG, tB);
             
             let alpha;
+            
             if (dist <= toleranceDist) {
-                const edgeDist = toleranceDist - dist;
-                const edgeFactor = Math.min(edgeDist / (softness * 10), 1);
-                alpha = edgeFactor * 255;
+                // Within tolerance - make transparent
+                alpha = 0;
+            } else if (softnessDist > 0 && dist <= toleranceDist + softnessDist) {
+                // In the soft edge zone - gradual transition
+                const edgeProgress = (dist - toleranceDist) / softnessDist;
+                alpha = Math.round(edgeProgress * 255);
             } else {
+                // Outside tolerance - fully opaque
                 alpha = 255;
             }
             
@@ -425,15 +437,23 @@ const ImageProcessor = {
             
             result.data[i + 3] = alpha;
             
-            // Color despill
-            if (despill && alpha < 255) {
-                const spillFactor = 1 - alpha / 255;
-                const avgOther = (r + g + b - Math.max(tR, tG, tB)) / 2;
+            // Color despill - reduce color spill from the background
+            if (despill && alpha > 0 && alpha < 255) {
+                const spillFactor = 1 - (alpha / 255);
                 
+                // Detect which channel dominates in target color and reduce it
                 if (tG > tR && tG > tB) {
-                    result.data[i + 1] = Utils.lerp(g, Math.min(r, b), spillFactor);
+                    // Green screen - reduce green, replace with average of R and B
+                    const replacement = (r + b) / 2;
+                    result.data[i + 1] = Math.round(Utils.lerp(g, Math.min(g, replacement), spillFactor));
                 } else if (tB > tR && tB > tG) {
-                    result.data[i + 2] = Utils.lerp(b, Math.min(r, g), spillFactor);
+                    // Blue screen - reduce blue, replace with average of R and G
+                    const replacement = (r + g) / 2;
+                    result.data[i + 2] = Math.round(Utils.lerp(b, Math.min(b, replacement), spillFactor));
+                } else if (tR > tG && tR > tB) {
+                    // Red dominant - reduce red
+                    const replacement = (g + b) / 2;
+                    result.data[i] = Math.round(Utils.lerp(r, Math.min(r, replacement), spillFactor));
                 }
             }
         }

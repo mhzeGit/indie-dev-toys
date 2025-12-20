@@ -418,6 +418,227 @@ const Utils = {
             valueDisplay.textContent = slider.value;
             if (callback) callback(parseFloat(slider.value));
         });
+    },
+
+    /**
+     * Create zoom controller for a preview container
+     */
+    createZoomController(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+
+        const controller = {
+            container,
+            zoom: 1,
+            minZoom: 0.1,
+            maxZoom: 10,
+            panX: 0,
+            panY: 0,
+            isPanning: false,
+            startX: 0,
+            startY: 0,
+            viewport: null,
+            content: null,
+            zoomDisplay: null,
+
+            init() {
+                // Create zoom controls HTML
+                const controls = document.createElement('div');
+                controls.className = 'zoom-controls';
+                controls.innerHTML = `
+                    <button class="zoom-btn" data-action="zoom-out" title="Zoom Out">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="zoom-btn" data-action="zoom-fit" title="Fit to View">
+                        <i class="fas fa-compress-arrows-alt"></i>
+                    </button>
+                    <span class="zoom-level">100%</span>
+                    <button class="zoom-btn" data-action="zoom-in" title="Zoom In">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="zoom-btn" data-action="zoom-reset" title="Reset (100%)">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                `;
+                
+                this.container.appendChild(controls);
+                this.zoomDisplay = controls.querySelector('.zoom-level');
+
+                // Setup button handlers
+                controls.querySelectorAll('.zoom-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const action = btn.dataset.action;
+                        switch (action) {
+                            case 'zoom-in':
+                                this.zoomBy(1.25);
+                                break;
+                            case 'zoom-out':
+                                this.zoomBy(0.8);
+                                break;
+                            case 'zoom-reset':
+                                this.resetZoom();
+                                break;
+                            case 'zoom-fit':
+                                this.fitToView();
+                                break;
+                        }
+                    });
+                });
+
+                // Setup mouse wheel zoom - works without modifier keys
+                this.container.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    this.zoomAt(delta, e.clientX, e.clientY);
+                }, { passive: false });
+
+                // Setup panning - works at any zoom level
+                this.container.addEventListener('mousedown', (e) => {
+                    if (e.button === 0) {
+                        e.preventDefault();
+                        this.startPan(e.clientX, e.clientY);
+                    }
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (this.isPanning) {
+                        this.pan(e.clientX, e.clientY);
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    this.endPan();
+                });
+
+                // Touch support
+                this.container.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 1) {
+                        e.preventDefault();
+                        this.startPan(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                }, { passive: false });
+
+                this.container.addEventListener('touchmove', (e) => {
+                    if (this.isPanning && e.touches.length === 1) {
+                        e.preventDefault();
+                        this.pan(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                }, { passive: false });
+
+                this.container.addEventListener('touchend', () => {
+                    this.endPan();
+                });
+
+                return this;
+            },
+
+            setContent(element) {
+                this.content = element;
+                this.applyTransform();
+            },
+
+            zoomBy(factor) {
+                const newZoom = Utils.clamp(this.zoom * factor, this.minZoom, this.maxZoom);
+                if (newZoom !== this.zoom) {
+                    this.zoom = newZoom;
+                    this.constrainPan();
+                    this.applyTransform();
+                }
+            },
+
+            zoomAt(factor, clientX, clientY) {
+                const rect = this.container.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const newZoom = Utils.clamp(this.zoom * factor, this.minZoom, this.maxZoom);
+                if (newZoom !== this.zoom) {
+                    // Adjust pan to zoom toward mouse position
+                    const zoomDelta = newZoom / this.zoom;
+                    this.panX = (this.panX - (clientX - centerX)) * zoomDelta + (clientX - centerX);
+                    this.panY = (this.panY - (clientY - centerY)) * zoomDelta + (clientY - centerY);
+                    
+                    this.zoom = newZoom;
+                    this.constrainPan();
+                    this.applyTransform();
+                }
+            },
+
+            resetZoom() {
+                this.zoom = 1;
+                this.panX = 0;
+                this.panY = 0;
+                this.applyTransform();
+            },
+
+            fitToView() {
+                if (!this.content) return;
+                
+                const containerRect = this.container.getBoundingClientRect();
+                const contentWidth = this.content.width || this.content.offsetWidth;
+                const contentHeight = this.content.height || this.content.offsetHeight;
+                
+                if (!contentWidth || !contentHeight) return;
+                
+                const padding = 40;
+                const scaleX = (containerRect.width - padding) / contentWidth;
+                const scaleY = (containerRect.height - padding) / contentHeight;
+                
+                this.zoom = Math.min(scaleX, scaleY, 1);
+                this.panX = 0;
+                this.panY = 0;
+                this.applyTransform();
+            },
+
+            startPan(x, y) {
+                this.isPanning = true;
+                this.startX = x - this.panX;
+                this.startY = y - this.panY;
+                this.container.style.cursor = 'grabbing';
+            },
+
+            pan(x, y) {
+                if (!this.isPanning) return;
+                this.panX = x - this.startX;
+                this.panY = y - this.startY;
+                this.constrainPan();
+                this.applyTransform();
+            },
+
+            endPan() {
+                this.isPanning = false;
+                this.container.style.cursor = 'grab';
+            },
+
+            constrainPan() {
+                if (!this.content) {
+                    return;
+                }
+
+                const containerRect = this.container.getBoundingClientRect();
+                const contentWidth = (this.content.width || this.content.offsetWidth) * this.zoom;
+                const contentHeight = (this.content.height || this.content.offsetHeight) * this.zoom;
+                
+                const maxPanX = Math.max(0, (contentWidth - containerRect.width) / 2 + 50);
+                const maxPanY = Math.max(0, (contentHeight - containerRect.height) / 2 + 50);
+                
+                this.panX = Utils.clamp(this.panX, -maxPanX, maxPanX);
+                this.panY = Utils.clamp(this.panY, -maxPanY, maxPanY);
+            },
+
+            applyTransform() {
+                if (this.content) {
+                    this.content.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+                }
+                if (this.zoomDisplay) {
+                    this.zoomDisplay.textContent = Math.round(this.zoom * 100) + '%';
+                }
+                this.container.style.cursor = this.isPanning ? 'grabbing' : 'grab';
+            }
+        };
+
+        return controller.init();
     }
 };
 
