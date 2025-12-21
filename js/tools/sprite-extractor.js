@@ -9,32 +9,17 @@ const SpriteExtractor = {
     detectedSprites: [],
     selectedSprite: null,
     zoomController: null,
-    overlayCanvas: null,
-    canvasWrapper: null,
+    boundsContainer: null,
+    isEditing: false,
+    editMode: null, // 'move', 'resize-nw', 'resize-ne', 'resize-sw', 'resize-se', 'resize-n', 'resize-s', 'resize-e', 'resize-w'
+    editStartX: 0,
+    editStartY: 0,
+    editStartSprite: null,
 
     init() {
         this.setupUpload();
         this.setupControls();
         this.setupZoom();
-        this.setupOverlayCanvas();
-    },
-
-    setupOverlayCanvas() {
-        // Create overlay canvas for drawing bounds
-        const mainCanvas = document.getElementById('extractor-canvas');
-        
-        this.overlayCanvas = document.createElement('canvas');
-        this.overlayCanvas.id = 'extractor-overlay-canvas';
-        this.overlayCanvas.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            display: none;
-        `;
-        
-        // Insert after main canvas
-        mainCanvas.parentNode.insertBefore(this.overlayCanvas, mainCanvas.nextSibling);
     },
 
     setupUpload() {
@@ -75,7 +60,9 @@ const SpriteExtractor = {
                 this.image = img;
                 this.displayImage();
                 this.detectedSprites = [];
+                this.selectedSprite = null;
                 this.updateSpriteGrid();
+                this.drawBounds();
                 Utils.showToast('Image loaded. Click "Detect Sprites" to find sprites.', 'success');
             };
             img.src = e.target.result;
@@ -97,22 +84,16 @@ const SpriteExtractor = {
         const placeholder = document.querySelector('#extractor-preview .preview-placeholder');
         if (placeholder) placeholder.style.display = 'none';
 
-        // Setup overlay canvas
-        this.overlayCanvas.width = canvas.width;
-        this.overlayCanvas.height = canvas.height;
-        this.overlayCanvas.style.display = 'block';
-
         document.getElementById('extractor-info').innerHTML = `
             <strong>Size:</strong> ${this.image.width} × ${this.image.height} px
         `;
 
-        // Create a wrapper div for both canvases so they transform together
+        // Create wrapper and bounds container
         this.setupCanvasWrapper();
 
         if (this.zoomController) {
             this.zoomController.resetZoom();
         }
-        this.drawBoundsOverlay();
     },
 
     setupCanvasWrapper() {
@@ -126,21 +107,243 @@ const SpriteExtractor = {
             wrapper.style.cssText = `
                 position: relative;
                 display: inline-block;
-                transform-origin: center center;
             `;
             
             // Move canvas into wrapper
             canvas.parentNode.insertBefore(wrapper, canvas);
             wrapper.appendChild(canvas);
-            wrapper.appendChild(this.overlayCanvas);
         }
         
-        this.canvasWrapper = wrapper;
+        // Create or get bounds container
+        let boundsContainer = document.getElementById('extractor-bounds-container');
+        if (!boundsContainer) {
+            boundsContainer = document.createElement('div');
+            boundsContainer.id = 'extractor-bounds-container';
+            wrapper.appendChild(boundsContainer);
+        }
+        
+        boundsContainer.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: ${this.image.width}px;
+            height: ${this.image.height}px;
+            pointer-events: none;
+        `;
+        
+        this.boundsContainer = boundsContainer;
         
         // Tell zoom controller to use wrapper as content
         if (this.zoomController) {
             this.zoomController.setContent(wrapper);
         }
+        
+        // Setup interaction handlers
+        this.setupInteraction();
+    },
+
+    setupInteraction() {
+        const container = this.boundsContainer;
+        if (!container) return;
+        
+        // Enable pointer events on the bounds container
+        container.style.pointerEvents = 'auto';
+        
+        // Mouse handlers for editing bounds
+        container.onmousedown = (e) => this.handleMouseDown(e);
+        container.onmousemove = (e) => this.handleMouseMove(e);
+        container.onmouseup = (e) => this.handleMouseUp(e);
+        container.onmouseleave = (e) => this.handleMouseUp(e);
+        
+        // Keyboard handler for delete
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' && this.selectedSprite !== null) {
+                this.deleteSelectedSprite();
+            }
+        });
+    },
+
+    getMouseCoords(e) {
+        const rect = this.boundsContainer.getBoundingClientRect();
+        const scaleX = this.image.width / rect.width;
+        const scaleY = this.image.height / rect.height;
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    },
+
+    handleMouseDown(e) {
+        const coords = this.getMouseCoords(e);
+        const target = e.target;
+        
+        // Check if clicking on a resize handle
+        if (target.classList.contains('sprite-resize-handle')) {
+            e.stopPropagation();
+            const spriteIndex = parseInt(target.closest('.sprite-bound').dataset.index);
+            this.selectedSprite = spriteIndex;
+            this.isEditing = true;
+            this.editMode = target.dataset.handle;
+            this.editStartX = coords.x;
+            this.editStartY = coords.y;
+            this.editStartSprite = { ...this.detectedSprites[spriteIndex] };
+            this.drawBounds();
+            return;
+        }
+        
+        // Check if clicking on a sprite bound
+        if (target.classList.contains('sprite-bound') || target.closest('.sprite-bound')) {
+            e.stopPropagation();
+            const bound = target.classList.contains('sprite-bound') ? target : target.closest('.sprite-bound');
+            const spriteIndex = parseInt(bound.dataset.index);
+            this.selectedSprite = spriteIndex;
+            this.isEditing = true;
+            this.editMode = 'move';
+            this.editStartX = coords.x;
+            this.editStartY = coords.y;
+            this.editStartSprite = { ...this.detectedSprites[spriteIndex] };
+            this.drawBounds();
+            this.updateSpriteGridSelection();
+            return;
+        }
+        
+        // Clicking on empty space - deselect or start new selection in manual mode
+        if (document.getElementById('extractor-mode').value === 'manual') {
+            this.selectedSprite = null;
+            this.isEditing = true;
+            this.editMode = 'create';
+            this.editStartX = coords.x;
+            this.editStartY = coords.y;
+            this.editStartSprite = { x: coords.x, y: coords.y, width: 0, height: 0 };
+            this.drawBounds();
+        } else {
+            this.selectedSprite = null;
+            this.drawBounds();
+            this.updateSpriteGridSelection();
+        }
+    },
+
+    handleMouseMove(e) {
+        if (!this.isEditing || !this.editStartSprite) return;
+        
+        const coords = this.getMouseCoords(e);
+        const dx = coords.x - this.editStartX;
+        const dy = coords.y - this.editStartY;
+        
+        if (this.editMode === 'create') {
+            // Creating new sprite
+            const x = Math.min(this.editStartX, coords.x);
+            const y = Math.min(this.editStartY, coords.y);
+            const width = Math.abs(coords.x - this.editStartX);
+            const height = Math.abs(coords.y - this.editStartY);
+            this.editStartSprite = { x, y, width, height };
+            this.drawBounds(this.editStartSprite);
+            return;
+        }
+        
+        const sprite = this.detectedSprites[this.selectedSprite];
+        if (!sprite) return;
+        
+        const start = this.editStartSprite;
+        
+        switch (this.editMode) {
+            case 'move':
+                sprite.x = Math.max(0, Math.min(this.image.width - sprite.width, start.x + dx));
+                sprite.y = Math.max(0, Math.min(this.image.height - sprite.height, start.y + dy));
+                break;
+            case 'resize-nw':
+                sprite.x = Math.min(start.x + start.width - 10, start.x + dx);
+                sprite.y = Math.min(start.y + start.height - 10, start.y + dy);
+                sprite.width = start.width - (sprite.x - start.x);
+                sprite.height = start.height - (sprite.y - start.y);
+                break;
+            case 'resize-ne':
+                sprite.y = Math.min(start.y + start.height - 10, start.y + dy);
+                sprite.width = Math.max(10, start.width + dx);
+                sprite.height = start.height - (sprite.y - start.y);
+                break;
+            case 'resize-sw':
+                sprite.x = Math.min(start.x + start.width - 10, start.x + dx);
+                sprite.width = start.width - (sprite.x - start.x);
+                sprite.height = Math.max(10, start.height + dy);
+                break;
+            case 'resize-se':
+                sprite.width = Math.max(10, start.width + dx);
+                sprite.height = Math.max(10, start.height + dy);
+                break;
+            case 'resize-n':
+                sprite.y = Math.min(start.y + start.height - 10, start.y + dy);
+                sprite.height = start.height - (sprite.y - start.y);
+                break;
+            case 'resize-s':
+                sprite.height = Math.max(10, start.height + dy);
+                break;
+            case 'resize-w':
+                sprite.x = Math.min(start.x + start.width - 10, start.x + dx);
+                sprite.width = start.width - (sprite.x - start.x);
+                break;
+            case 'resize-e':
+                sprite.width = Math.max(10, start.width + dx);
+                break;
+        }
+        
+        // Clamp to image bounds
+        sprite.x = Math.max(0, sprite.x);
+        sprite.y = Math.max(0, sprite.y);
+        sprite.width = Math.min(sprite.width, this.image.width - sprite.x);
+        sprite.height = Math.min(sprite.height, this.image.height - sprite.y);
+        
+        this.drawBounds();
+    },
+
+    handleMouseUp(e) {
+        if (this.editMode === 'create' && this.editStartSprite) {
+            const newSprite = this.editStartSprite;
+            if (newSprite.width > 5 && newSprite.height > 5) {
+                this.detectedSprites.push({
+                    index: this.detectedSprites.length + 1,
+                    x: Math.round(newSprite.x),
+                    y: Math.round(newSprite.y),
+                    width: Math.round(newSprite.width),
+                    height: Math.round(newSprite.height)
+                });
+                this.selectedSprite = this.detectedSprites.length - 1;
+                this.updateSpriteGrid();
+                document.getElementById('extractor-count').textContent = this.detectedSprites.length;
+                document.getElementById('extractor-download-all').disabled = false;
+            }
+        } else if (this.isEditing && this.selectedSprite !== null) {
+            // Round sprite values after editing
+            const sprite = this.detectedSprites[this.selectedSprite];
+            if (sprite) {
+                sprite.x = Math.round(sprite.x);
+                sprite.y = Math.round(sprite.y);
+                sprite.width = Math.round(sprite.width);
+                sprite.height = Math.round(sprite.height);
+            }
+            this.updateSpriteGrid();
+        }
+        
+        this.isEditing = false;
+        this.editMode = null;
+        this.editStartSprite = null;
+        this.drawBounds();
+    },
+
+    deleteSelectedSprite() {
+        if (this.selectedSprite === null) return;
+        
+        this.detectedSprites.splice(this.selectedSprite, 1);
+        // Renumber sprites
+        this.detectedSprites.forEach((s, i) => s.index = i + 1);
+        this.selectedSprite = null;
+        
+        document.getElementById('extractor-count').textContent = this.detectedSprites.length;
+        document.getElementById('extractor-download-all').disabled = this.detectedSprites.length === 0;
+        
+        this.updateSpriteGrid();
+        this.drawBounds();
+        Utils.showToast('Sprite deleted', 'info');
     },
 
     setupControls() {
@@ -199,14 +402,15 @@ const SpriteExtractor = {
                         break;
                 }
 
+                this.selectedSprite = null;
                 this.updateSpriteGrid();
-                this.drawBoundsOverlay();
+                this.drawBounds();
 
                 document.getElementById('extractor-count').textContent = this.detectedSprites.length;
                 document.getElementById('extractor-download-all').disabled = this.detectedSprites.length === 0;
 
                 if (this.detectedSprites.length > 0) {
-                    Utils.showToast(`Detected ${this.detectedSprites.length} sprites!`, 'success');
+                    Utils.showToast(`Detected ${this.detectedSprites.length} sprites! Click to select, drag to move/resize, Delete key to remove.`, 'success');
                 } else {
                     Utils.showToast('No sprites detected. Try adjusting settings.', 'warning');
                 }
@@ -359,71 +563,7 @@ const SpriteExtractor = {
     },
 
     startManualSelection() {
-        Utils.showToast('Click and drag on the image to select sprites', 'info');
-        this.setupManualDrawing();
-    },
-
-    setupManualDrawing() {
-        const canvas = document.getElementById('extractor-canvas');
-        let isDrawing = false;
-        let startX, startY;
-        let tempRect = null;
-
-        const getCanvasCoords = (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
-            };
-        };
-
-        canvas.style.cursor = 'crosshair';
-        canvas.style.pointerEvents = 'auto';
-
-        canvas.onmousedown = (e) => {
-            if (document.getElementById('extractor-mode').value !== 'manual') return;
-            
-            isDrawing = true;
-            const coords = getCanvasCoords(e);
-            startX = coords.x;
-            startY = coords.y;
-            tempRect = { x: startX, y: startY, width: 0, height: 0 };
-        };
-
-        canvas.onmousemove = (e) => {
-            if (!isDrawing || !tempRect) return;
-            
-            const coords = getCanvasCoords(e);
-            tempRect.x = Math.min(startX, coords.x);
-            tempRect.y = Math.min(startY, coords.y);
-            tempRect.width = Math.abs(coords.x - startX);
-            tempRect.height = Math.abs(coords.y - startY);
-            
-            this.drawBoundsOverlay(tempRect);
-        };
-
-        canvas.onmouseup = () => {
-            if (!isDrawing || !tempRect) return;
-            isDrawing = false;
-
-            if (tempRect.width > 5 && tempRect.height > 5) {
-                this.detectedSprites.push({
-                    index: this.detectedSprites.length + 1,
-                    x: Math.round(tempRect.x),
-                    y: Math.round(tempRect.y),
-                    width: Math.round(tempRect.width),
-                    height: Math.round(tempRect.height)
-                });
-                this.updateSpriteGrid();
-                document.getElementById('extractor-count').textContent = this.detectedSprites.length;
-                document.getElementById('extractor-download-all').disabled = false;
-            }
-
-            tempRect = null;
-            this.drawBoundsOverlay();
-        };
+        Utils.showToast('Click and drag to create sprites. Click existing sprites to select. Press Delete to remove.', 'info');
     },
 
     updateSpriteGrid() {
@@ -435,7 +575,7 @@ const SpriteExtractor = {
         }
 
         grid.innerHTML = this.detectedSprites.map((sprite, i) => `
-            <div class="sprite-grid-item" data-index="${i}">
+            <div class="sprite-grid-item ${i === this.selectedSprite ? 'selected' : ''}" data-index="${i}">
                 <canvas></canvas>
                 <span class="sprite-index">${sprite.index || i + 1}</span>
             </div>
@@ -460,10 +600,9 @@ const SpriteExtractor = {
             );
 
             item.addEventListener('click', () => {
-                grid.querySelectorAll('.sprite-grid-item').forEach(el => el.classList.remove('selected'));
-                item.classList.add('selected');
                 this.selectedSprite = i;
-                this.drawBoundsOverlay();
+                this.drawBounds();
+                this.updateSpriteGridSelection();
             });
 
             item.addEventListener('dblclick', () => {
@@ -472,45 +611,115 @@ const SpriteExtractor = {
         });
     },
 
-    drawBoundsOverlay(tempRect = null) {
-        if (!this.overlayCanvas || !this.image) return;
+    updateSpriteGridSelection() {
+        const grid = document.getElementById('extractor-sprite-grid');
+        grid.querySelectorAll('.sprite-grid-item').forEach((item, i) => {
+            item.classList.toggle('selected', i === this.selectedSprite);
+        });
+    },
+
+    drawBounds(tempSprite = null) {
+        if (!this.boundsContainer || !this.image) return;
         
-        const ctx = this.overlayCanvas.getContext('2d');
-        ctx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+        // Clear existing bounds
+        this.boundsContainer.innerHTML = '';
         
         // Draw detected sprites
         this.detectedSprites.forEach((sprite, i) => {
             const isSelected = i === this.selectedSprite;
-            
-            // Fill
-            ctx.fillStyle = isSelected ? 'rgba(63, 185, 80, 0.2)' : 'rgba(88, 166, 255, 0.15)';
-            ctx.fillRect(sprite.x, sprite.y, sprite.width, sprite.height);
-            
-            // Border
-            ctx.strokeStyle = isSelected ? '#3fb950' : '#58a6ff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(sprite.x, sprite.y, sprite.width, sprite.height);
-            
-            // Label
-            ctx.fillStyle = isSelected ? '#3fb950' : '#58a6ff';
-            ctx.font = 'bold 12px sans-serif';
-            const label = String(sprite.index || i + 1);
-            const labelWidth = ctx.measureText(label).width + 6;
-            ctx.fillRect(sprite.x, sprite.y - 16, labelWidth, 16);
-            ctx.fillStyle = '#fff';
-            ctx.fillText(label, sprite.x + 3, sprite.y - 4);
+            this.createSpriteBound(sprite, i, isSelected);
         });
         
-        // Draw temp rect if in manual mode
-        if (tempRect && tempRect.width > 0 && tempRect.height > 0) {
-            ctx.fillStyle = 'rgba(88, 166, 255, 0.2)';
-            ctx.fillRect(tempRect.x, tempRect.y, tempRect.width, tempRect.height);
-            ctx.strokeStyle = '#58a6ff';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.strokeRect(tempRect.x, tempRect.y, tempRect.width, tempRect.height);
-            ctx.setLineDash([]);
+        // Draw temp sprite if creating new one
+        if (tempSprite && tempSprite.width > 0 && tempSprite.height > 0) {
+            this.createSpriteBound(tempSprite, -1, false, true);
         }
+    },
+
+    createSpriteBound(sprite, index, isSelected, isTemp = false) {
+        const bound = document.createElement('div');
+        bound.className = 'sprite-bound' + (isSelected ? ' selected' : '') + (isTemp ? ' temp' : '');
+        bound.dataset.index = index;
+        
+        const borderColor = isTemp ? '#58a6ff' : (isSelected ? '#3fb950' : '#58a6ff');
+        const bgColor = isTemp ? 'rgba(88, 166, 255, 0.2)' : (isSelected ? 'rgba(63, 185, 80, 0.2)' : 'rgba(88, 166, 255, 0.15)');
+        
+        bound.style.cssText = `
+            position: absolute;
+            left: ${sprite.x}px;
+            top: ${sprite.y}px;
+            width: ${sprite.width}px;
+            height: ${sprite.height}px;
+            background: ${bgColor};
+            border: 2px solid ${borderColor};
+            box-sizing: border-box;
+            cursor: ${isTemp ? 'default' : 'move'};
+            pointer-events: ${isTemp ? 'none' : 'auto'};
+            ${isTemp ? 'border-style: dashed;' : ''}
+        `;
+        
+        // Add label
+        if (!isTemp) {
+            const label = document.createElement('div');
+            label.className = 'sprite-label';
+            label.style.cssText = `
+                position: absolute;
+                top: -18px;
+                left: -2px;
+                background: ${borderColor};
+                color: #fff;
+                font-size: 11px;
+                font-weight: bold;
+                padding: 1px 4px;
+                border-radius: 2px 2px 0 0;
+                pointer-events: none;
+                white-space: nowrap;
+            `;
+            label.textContent = sprite.index || index + 1;
+            bound.appendChild(label);
+        }
+        
+        // Add resize handles if selected
+        if (isSelected && !isTemp) {
+            const handles = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'];
+            handles.forEach(pos => {
+                const handle = document.createElement('div');
+                handle.className = 'sprite-resize-handle';
+                handle.dataset.handle = `resize-${pos}`;
+                
+                let cursor = pos + '-resize';
+                if (pos === 'n' || pos === 's') cursor = 'ns-resize';
+                if (pos === 'e' || pos === 'w') cursor = 'ew-resize';
+                if (pos === 'nw' || pos === 'se') cursor = 'nwse-resize';
+                if (pos === 'ne' || pos === 'sw') cursor = 'nesw-resize';
+                
+                let left = '50%', top = '50%';
+                if (pos.includes('w')) { left = '0'; }
+                if (pos.includes('e')) { left = '100%'; }
+                if (pos.includes('n')) { top = '0'; }
+                if (pos.includes('s')) { top = '100%'; }
+                if (pos === 'n' || pos === 's') { left = '50%'; }
+                if (pos === 'w' || pos === 'e') { top = '50%'; }
+                
+                handle.style.cssText = `
+                    position: absolute;
+                    left: ${left};
+                    top: ${top};
+                    width: 10px;
+                    height: 10px;
+                    background: #fff;
+                    border: 2px solid ${borderColor};
+                    border-radius: 2px;
+                    transform: translate(-50%, -50%);
+                    cursor: ${cursor};
+                    pointer-events: auto;
+                    z-index: 10;
+                `;
+                bound.appendChild(handle);
+            });
+        }
+        
+        this.boundsContainer.appendChild(bound);
     },
 
     extractSprite(sprite) {
