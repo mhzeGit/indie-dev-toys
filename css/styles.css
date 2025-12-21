@@ -97,6 +97,13 @@ html, body {
     font-size: 24px;
 }
 
+.logo-image {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
 .sidebar-nav {
     flex: 1;
     padding: 12px;
@@ -412,7 +419,33 @@ input[type="color"] {
 .checkbox-label input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    accent-color: var(--accent-primary);
+    appearance: none;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+    transition: all var(--transition-fast);
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.checkbox-label input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--bg-primary);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.checkbox-label input[type="checkbox"]:hover {
+    border-color: var(--accent-primary);
 }
 
 .checkbox-label:hover {
