@@ -753,22 +753,35 @@ const SpriteExtractor = {
             return;
         }
 
-        Utils.showLoading('Downloading sprites...');
+        Utils.showLoading('Creating zip file...');
 
         try {
+            const zip = new JSZip();
+            const spritesFolder = zip.folder('sprites');
+            
             for (let i = 0; i < this.detectedSprites.length; i++) {
                 const sprite = this.detectedSprites[i];
                 const canvas = this.extractSprite(sprite);
-                const link = document.createElement('a');
-                link.download = `sprite_${i + 1}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                await new Promise(r => setTimeout(r, 100));
+                
+                // Convert canvas to blob
+                const dataUrl = canvas.toDataURL('image/png');
+                const base64Data = dataUrl.split(',')[1];
+                
+                spritesFolder.file(`sprite_${i + 1}.png`, base64Data, { base64: true });
             }
-            Utils.showToast(`Downloaded ${this.detectedSprites.length} sprites!`, 'success');
+            
+            // Generate and download zip
+            const content = await zip.generateAsync({ type: 'blob' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = 'sprites.zip';
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            Utils.showToast(`Downloaded ${this.detectedSprites.length} sprites as zip!`, 'success');
         } catch (error) {
             console.error('Download error:', error);
-            Utils.showToast('Error downloading sprites', 'error');
+            Utils.showToast('Error creating zip file', 'error');
         } finally {
             Utils.hideLoading();
         }
