@@ -1,0 +1,119 @@
+<!-- Texture Library Tool -->
+<div id="texture-library" class="tool-view">
+    <header class="tool-header">
+        <h1><i class="fas fa-images"></i> Texture Library</h1>
+        <p>Upload, catalog, and manage your textures with resolution and aspect ratio metadata.</p>
+    </header>
+
+    <div class="tool-layout">
+        <div class="tool-sidebar">
+            <div class="control-group">
+                <label>Upload Textures</label>
+                <div class="file-upload" id="texlib-upload">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Drag & drop or click to upload</span>
+                    <input type="file" accept="image/*" id="texlib-file-input" multiple>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Output Resolution</label>
+                <select id="texlib-resolution">
+                    <option value="original">Keep Original</option>
+                    <option value="64">64 × 64</option>
+                    <option value="128">128 × 128</option>
+                    <option value="256">256 × 256</option>
+                    <option value="512">512 × 512</option>
+                    <option value="1024" selected>1024 × 1024</option>
+                    <option value="2048">2048 × 2048</option>
+                    <option value="4096">4096 × 4096</option>
+                    <option value="custom">Custom...</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="texlib-custom-res-group" style="display: none;">
+                <label>Custom Resolution</label>
+                <div class="crop-inputs">
+                    <input type="number" id="texlib-custom-width" placeholder="Width" value="1024" min="1" max="8192">
+                    <input type="number" id="texlib-custom-height" placeholder="Height" value="1024" min="1" max="8192">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Aspect Ratio</label>
+                <select id="texlib-ratio">
+                    <option value="free">Free (Keep Original)</option>
+                    <option value="1:1" selected>1 : 1 (Square)</option>
+                    <option value="2:1">2 : 1</option>
+                    <option value="1:2">1 : 2</option>
+                    <option value="4:3">4 : 3</option>
+                    <option value="3:4">3 : 4</option>
+                    <option value="16:9">16 : 9</option>
+                    <option value="9:16">9 : 16</option>
+                    <option value="custom">Custom...</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="texlib-custom-ratio-group" style="display: none;">
+                <label>Custom Ratio</label>
+                <div class="crop-inputs">
+                    <input type="number" id="texlib-ratio-w" placeholder="W" value="1" min="1" max="100">
+                    <input type="number" id="texlib-ratio-h" placeholder="H" value="1" min="1" max="100">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Resize Method</label>
+                <select id="texlib-resize-method">
+                    <option value="cover" selected>Cover (Crop to Fit)</option>
+                    <option value="contain">Contain (Letterbox)</option>
+                    <option value="stretch">Stretch</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Output Format</label>
+                <select id="texlib-format">
+                    <option value="png">PNG (Lossless)</option>
+                    <option value="jpeg">JPEG</option>
+                    <option value="webp">WebP</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="texlib-quality-group" style="display: none;">
+                <label>Quality: <span id="texlib-quality-value">92</span>%</label>
+                <input type="range" id="texlib-quality" min="1" max="100" value="92">
+            </div>
+
+            <button class="btn btn-primary btn-block" id="texlib-process">
+                <i class="fas fa-cog"></i> Process All Textures
+            </button>
+            <button class="btn btn-secondary btn-block" id="texlib-download-all" disabled>
+                <i class="fas fa-download"></i> Download All (ZIP)
+            </button>
+            <button class="btn btn-secondary btn-block" id="texlib-clear-all" disabled>
+                <i class="fas fa-trash"></i> Clear Library
+            </button>
+        </div>
+
+        <div class="tool-preview">
+            <div class="preview-tabs">
+                <button class="preview-tab active" data-preview="library">Library</button>
+                <button class="preview-tab" data-preview="selected">Selected Texture</button>
+            </div>
+            <div class="preview-container" id="texlib-preview">
+                <div class="preview-placeholder" id="texlib-placeholder">
+                    <i class="fas fa-images"></i>
+                    <span>Upload textures to begin</span>
+                </div>
+                <!-- Library grid view -->
+                <div id="texlib-grid" class="texlib-grid" style="display: none;"></div>
+                <!-- Single texture detail view -->
+                <div id="texlib-detail" class="texlib-detail" style="display: none;">
+                    <canvas id="texlib-canvas"></canvas>
+                </div>
+            </div>
+            <div class="preview-info" id="texlib-info"></div>
+        </div>
+    </div>
+</div>

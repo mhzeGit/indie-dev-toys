@@ -17,7 +17,8 @@ const App = {
         'normal-map': { view: 'views/normal-map.html', init: () => NormalMapTool.init() },
         'channel-packer': { view: 'views/channel-packer.html', init: () => ChannelPacker.init() },
         'atlas-packer': { view: 'views/atlas-packer.html', init: () => AtlasPacker.init() },
-        'sprite-extractor': { view: 'views/sprite-extractor.html', init: () => SpriteExtractor.init() }
+        'sprite-extractor': { view: 'views/sprite-extractor.html', init: () => SpriteExtractor.init() },
+        'texture-library': { view: 'views/texture-library.html', init: () => TextureLibrary.init() }
     },
 
     /**
@@ -134,6 +135,7 @@ const App = {
                     '5': 'channel-packer',
                     '6': 'atlas-packer',
                     '7': 'sprite-extractor',
+                    '8': 'texture-library',
                     '0': 'dashboard'
                 };
                 
