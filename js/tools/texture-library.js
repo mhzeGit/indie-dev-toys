@@ -17,6 +17,12 @@ const TextureLibrary = {
         this.setupEventListeners();
         this.setupSliders();
         this.setupZoom();
+        
+        // Initialize control states after a short delay to ensure DOM is ready
+        setTimeout(() => {
+            this.toggleResolutionControls(document.getElementById('texlib-enable-resolution').checked);
+            this.toggleRatioControls(document.getElementById('texlib-enable-ratio').checked);
+        }, 10);
     },
 
     /**
@@ -71,6 +77,16 @@ const TextureLibrary = {
             qualityGroup.style.display = e.target.value === 'png' ? 'none' : 'block';
         });
 
+        // Enable resolution toggle
+        document.getElementById('texlib-enable-resolution').addEventListener('change', (e) => {
+            this.toggleResolutionControls(e.target.checked);
+        });
+
+        // Enable ratio toggle
+        document.getElementById('texlib-enable-ratio').addEventListener('change', (e) => {
+            this.toggleRatioControls(e.target.checked);
+        });
+
         // Process button
         document.getElementById('texlib-process').addEventListener('click', () => this.processAll());
 
@@ -100,6 +116,51 @@ const TextureLibrary = {
         Utils.setupRangeSlider('texlib-saturation', 'texlib-saturation-value');
         Utils.setupRangeSlider('texlib-brightness', 'texlib-brightness-value');
         Utils.setupRangeSlider('texlib-contrast', 'texlib-contrast-value');
+    },
+
+    /**
+     * Toggle resolution controls enabled/disabled
+     */
+    toggleResolutionControls(enabled) {
+        const controls = [
+            document.getElementById('texlib-resolution'),
+            document.getElementById('texlib-custom-width'),
+            document.getElementById('texlib-custom-height'),
+            document.getElementById('texlib-resize-method')
+        ];
+        
+        controls.forEach(el => {
+            if (el) {
+                el.disabled = !enabled;
+                if (enabled) {
+                    el.style.pointerEvents = '';
+                } else {
+                    el.style.pointerEvents = 'none';
+                }
+            }
+        });
+    },
+
+    /**
+     * Toggle ratio controls enabled/disabled
+     */
+    toggleRatioControls(enabled) {
+        const controls = [
+            document.getElementById('texlib-ratio'),
+            document.getElementById('texlib-ratio-w'),
+            document.getElementById('texlib-ratio-h')
+        ];
+        
+        controls.forEach(el => {
+            if (el) {
+                el.disabled = !enabled;
+                if (enabled) {
+                    el.style.pointerEvents = '';
+                } else {
+                    el.style.pointerEvents = 'none';
+                }
+            }
+        });
     },
 
     // ─── Image Loading ─────────────────────────────────────────
@@ -142,12 +203,15 @@ const TextureLibrary = {
 
         Utils.showLoading('Processing textures...');
 
-        const { width: targetW, height: targetH } = this.getTargetSize();
+        const enableResolution = document.getElementById('texlib-enable-resolution').checked;
+        const enableRatio = document.getElementById('texlib-enable-ratio').checked;
+
+        const { width: targetW, height: targetH } = enableResolution ? this.getTargetSize(enableRatio) : { width: 0, height: 0 };
         const method = document.getElementById('texlib-resize-method').value;
 
         try {
             for (const tex of this.textures) {
-                tex.processedCanvas = this.resizeImage(tex.originalImage, targetW, targetH, method, tex);
+                tex.processedCanvas = this.resizeImage(tex.originalImage, targetW, targetH, method, tex, enableRatio);
                 tex.processedCanvas = this.applyColorAdjustments(tex.processedCanvas);
                 tex.width = tex.processedCanvas.width;
                 tex.height = tex.processedCanvas.height;
@@ -167,18 +231,20 @@ const TextureLibrary = {
     /**
      * Resize an image to the target dimensions with the chosen method
      */
-    resizeImage(img, targetW, targetH, method, tex) {
+    resizeImage(img, targetW, targetH, method, tex, enableRatio = true) {
         // If "Keep Original" for resolution, use the image's own dimensions
         if (targetW === 0 || targetH === 0) {
             targetW = img.width;
             targetH = img.height;
 
-            // Still apply aspect ratio if not "free"
-            const ratio = this.getTargetRatio();
-            if (ratio) {
-                const adjusted = this.applyRatio(targetW, targetH, ratio, method);
-                targetW = adjusted.w;
-                targetH = adjusted.h;
+            // Still apply aspect ratio if enabled
+            if (enableRatio) {
+                const ratio = this.getTargetRatio();
+                if (ratio) {
+                    const adjusted = this.applyRatio(targetW, targetH, ratio, method);
+                    targetW = adjusted.w;
+                    targetH = adjusted.h;
+                }
             }
         }
 
@@ -279,7 +345,7 @@ const TextureLibrary = {
     /**
      * Determine the target pixel size from the UI selectors
      */
-    getTargetSize() {
+    getTargetSize(enableRatio = true) {
         const sel = document.getElementById('texlib-resolution').value;
 
         if (sel === 'original') return { width: 0, height: 0 };
@@ -293,7 +359,7 @@ const TextureLibrary = {
         const size = parseInt(sel, 10);
 
         // Apply aspect ratio to square base
-        const ratio = this.getTargetRatio();
+        const ratio = enableRatio ? this.getTargetRatio() : null;
         if (ratio) {
             if (ratio.w >= ratio.h) {
                 return { width: size, height: Math.round(size * ratio.h / ratio.w) };

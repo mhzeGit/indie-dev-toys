@@ -405,15 +405,25 @@ input[type="color"] {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-bottom: 4px;
 }
 
 .checkbox-label {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
     color: var(--text-secondary);
     font-size: 13px;
+    padding: 5px 8px 3px 8px;
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+    margin-bottom: 2px;
+}
+
+.checkbox-label:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -426,6 +436,7 @@ input[type="color"] {
     cursor: pointer;
     position: relative;
     transition: all var(--transition-fast);
+    flex-shrink: 0;
 }
 
 .checkbox-label input[type="checkbox"]:checked {
@@ -446,10 +457,19 @@ input[type="color"] {
 
 .checkbox-label input[type="checkbox"]:hover {
     border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
 }
 
 .checkbox-label:hover {
     color: var(--text-primary);
+}
+
+/* Disabled controls */
+.control-group select:disabled,
+.control-group input:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: rgba(48, 54, 61, 0.5);
 }
 
 /* ================================

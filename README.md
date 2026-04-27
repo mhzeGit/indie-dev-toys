@@ -2,6 +2,8 @@
 
 A clean, web-based platform with practical tools for indie developers. All tools run entirely in the browser with no installation required.
 
+**Live Demo:** https://mhzegit.github.io/indie-dev-toys/
+
 ![Indie Dev Toys Screenshot](screenshot.png)
 
 ## Features

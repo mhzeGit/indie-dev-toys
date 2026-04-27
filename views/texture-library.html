@@ -17,6 +17,15 @@
             </div>
 
             <div class="control-group">
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="texlib-enable-resolution">
+                        Enable Resolution Adjustment
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
                 <label>Output Resolution</label>
                 <select id="texlib-resolution">
                     <option value="original">Keep Original</option>
@@ -36,6 +45,24 @@
                 <div class="crop-inputs">
                     <input type="number" id="texlib-custom-width" placeholder="Width" value="1024" min="1" max="8192">
                     <input type="number" id="texlib-custom-height" placeholder="Height" value="1024" min="1" max="8192">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Resize Method</label>
+                <select id="texlib-resize-method">
+                    <option value="cover" selected>Cover (Crop to Fit)</option>
+                    <option value="contain">Contain (Letterbox)</option>
+                    <option value="stretch">Stretch</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="texlib-enable-ratio">
+                        Enable Aspect Ratio Adjustment
+                    </label>
                 </div>
             </div>
 
@@ -60,15 +87,6 @@
                     <input type="number" id="texlib-ratio-w" placeholder="W" value="1" min="1" max="100">
                     <input type="number" id="texlib-ratio-h" placeholder="H" value="1" min="1" max="100">
                 </div>
-            </div>
-
-            <div class="control-group">
-                <label>Resize Method</label>
-                <select id="texlib-resize-method">
-                    <option value="cover" selected>Cover (Crop to Fit)</option>
-                    <option value="contain">Contain (Letterbox)</option>
-                    <option value="stretch">Stretch</option>
-                </select>
             </div>
 
             <div class="control-group">
