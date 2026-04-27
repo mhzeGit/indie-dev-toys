@@ -1,8 +1,8 @@
-<!-- Texture Library Tool -->
+<!-- Quick Image Adjustment Tool -->
 <div id="texture-library" class="tool-view">
     <header class="tool-header">
-        <h1><i class="fas fa-images"></i> Texture Library</h1>
-        <p>Upload, catalog, and manage your textures with resolution and aspect ratio metadata.</p>
+        <h1><i class="fas fa-sliders-h"></i> Quick Image Adjustment</h1>
+        <p>Batch-adjust hue, saturation, brightness, contrast, resolution, and aspect ratio across multiple textures.</p>
     </header>
 
     <div class="tool-layout">
@@ -72,6 +72,26 @@
             </div>
 
             <div class="control-group">
+                <label>Hue Shift: <span id="texlib-hue-value">0</span>°</label>
+                <input type="range" id="texlib-hue" min="-180" max="180" value="0">
+            </div>
+
+            <div class="control-group">
+                <label>Saturation: <span id="texlib-saturation-value">0</span></label>
+                <input type="range" id="texlib-saturation" min="-100" max="100" value="0">
+            </div>
+
+            <div class="control-group">
+                <label>Brightness: <span id="texlib-brightness-value">0</span></label>
+                <input type="range" id="texlib-brightness" min="-100" max="100" value="0">
+            </div>
+
+            <div class="control-group">
+                <label>Contrast: <span id="texlib-contrast-value">0</span></label>
+                <input type="range" id="texlib-contrast" min="-100" max="100" value="0">
+            </div>
+
+            <div class="control-group">
                 <label>Output Format</label>
                 <select id="texlib-format">
                     <option value="png">PNG (Lossless)</option>
@@ -90,6 +110,9 @@
             </button>
             <button class="btn btn-secondary btn-block" id="texlib-download-all" disabled>
                 <i class="fas fa-download"></i> Download All (ZIP)
+            </button>
+            <button class="btn btn-secondary btn-block" id="texlib-reset-all" disabled>
+                <i class="fas fa-undo"></i> Reset / Undo All Changes
             </button>
             <button class="btn btn-secondary btn-block" id="texlib-clear-all" disabled>
                 <i class="fas fa-trash"></i> Clear Library

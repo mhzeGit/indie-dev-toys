@@ -47,6 +47,11 @@ const TextureDilationTool = {
             this.downloadResult();
         });
 
+        // Reset button
+        document.getElementById('dilation-reset').addEventListener('click', () => {
+            this.resetImage();
+        });
+
         // Preview tabs
         document.querySelectorAll('#texture-dilation .preview-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -289,8 +294,9 @@ const TextureDilationTool = {
                 this.refreshCurrentPreview();
             }
             
-            // Enable download
+            // Enable download and reset
             document.getElementById('dilation-download').disabled = false;
+            document.getElementById('dilation-reset').disabled = false;
             
             // Calculate dilated pixel count
             const dilatedCount = this.countDilatedPixels();
@@ -355,6 +361,20 @@ const TextureDilationTool = {
         }
         
         return count;
+    },
+
+    /**
+     * Reset to original — clears processed result and restores original preview
+     */
+    resetImage() {
+        if (!this.originalImage) return;
+        this.resultImageData = null;
+        this.hasProcessed = false;
+        document.getElementById('dilation-download').disabled = true;
+        document.getElementById('dilation-reset').disabled = true;
+        this.showOriginal();
+        this.updateInfo(`${this.originalImage.width} × ${this.originalImage.height}px — Original`);
+        Utils.showToast('Reset to original', 'success');
     },
 
     /**

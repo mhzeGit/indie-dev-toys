@@ -73,6 +73,11 @@ const BackgroundRemoverTool = {
             this.downloadResult();
         });
 
+        // Reset button
+        document.getElementById('bgremove-reset').addEventListener('click', () => {
+            this.resetImage();
+        });
+
         // Preview tabs
         document.querySelectorAll('#background-remover .preview-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -391,8 +396,9 @@ const BackgroundRemoverTool = {
                 this.refreshCurrentPreview();
             }
             
-            // Enable download
+            // Enable download and reset
             document.getElementById('bgremove-download').disabled = false;
+            document.getElementById('bgremove-reset').disabled = false;
             
             // Update info
             const transparentPixels = this.countTransparentPixels();
@@ -442,6 +448,22 @@ const BackgroundRemoverTool = {
         }
         
         return Math.round((transparent / total) * 100);
+    },
+
+    /**
+     * Reset to original — clears the processed result and restores the original image
+     */
+    resetImage() {
+        if (!this.originalImage) return;
+        this.resultImageData = null;
+        this.maskImageData = null;
+        this.hasProcessed = false;
+        this.isPickingColor = false;
+        document.getElementById('bgremove-download').disabled = true;
+        document.getElementById('bgremove-reset').disabled = true;
+        this.showOriginal();
+        this.updateInfo(`Original: ${this.originalImage.width} × ${this.originalImage.height}px`);
+        Utils.showToast('Reset to original', 'success');
     },
 
     /**

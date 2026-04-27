@@ -48,6 +48,11 @@ const NormalMapTool = {
             this.downloadResult();
         });
 
+        // Reset button
+        document.getElementById('normal-reset').addEventListener('click', () => {
+            this.resetImage();
+        });
+
         // Preview tabs
         document.querySelectorAll('#normal-map .preview-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -387,8 +392,9 @@ const NormalMapTool = {
                 this.refreshCurrentPreview();
             }
             
-            // Enable download
+            // Enable download and reset
             document.getElementById('normal-download').disabled = false;
+            document.getElementById('normal-reset').disabled = false;
             
             // Update info
             this.updateInfo(
@@ -404,6 +410,21 @@ const NormalMapTool = {
             Utils.showToast('Processing failed: ' + error.message, 'error');
             console.error(error);
         }
+    },
+
+    /**
+     * Reset to original — clears the generated normal map and shows original image
+     */
+    resetImage() {
+        if (!this.originalImage) return;
+        this.resultImageData = null;
+        this.heightMapData = null;
+        this.hasProcessed = false;
+        document.getElementById('normal-download').disabled = true;
+        document.getElementById('normal-reset').disabled = true;
+        this.showOriginal();
+        this.updateInfo(`Original: ${this.originalImage.width} × ${this.originalImage.height}px`);
+        Utils.showToast('Reset to original', 'success');
     },
 
     /**

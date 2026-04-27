@@ -1,6 +1,6 @@
 /**
- * Indie Dev Toys - Texture Library Tool
- * Upload, catalog, and manage textures with resolution and aspect ratio metadata
+ * Indie Dev Toys - Quick Image Adjustment Tool
+ * Upload, batch-adjust (hue, saturation, brightness, contrast, resolution, ratio) and download textures
  */
 
 const TextureLibrary = {
@@ -80,6 +80,9 @@ const TextureLibrary = {
         // Clear all
         document.getElementById('texlib-clear-all').addEventListener('click', () => this.clearAll());
 
+        // Reset / Undo all changes
+        document.getElementById('texlib-reset-all').addEventListener('click', () => this.resetAll());
+
         // Preview tabs
         document.querySelectorAll('#texture-library .preview-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -93,6 +96,10 @@ const TextureLibrary = {
      */
     setupSliders() {
         Utils.setupRangeSlider('texlib-quality', 'texlib-quality-value');
+        Utils.setupRangeSlider('texlib-hue', 'texlib-hue-value');
+        Utils.setupRangeSlider('texlib-saturation', 'texlib-saturation-value');
+        Utils.setupRangeSlider('texlib-brightness', 'texlib-brightness-value');
+        Utils.setupRangeSlider('texlib-contrast', 'texlib-contrast-value');
     },
 
     // ─── Image Loading ─────────────────────────────────────────
@@ -141,6 +148,7 @@ const TextureLibrary = {
         try {
             for (const tex of this.textures) {
                 tex.processedCanvas = this.resizeImage(tex.originalImage, targetW, targetH, method, tex);
+                tex.processedCanvas = this.applyColorAdjustments(tex.processedCanvas);
                 tex.width = tex.processedCanvas.width;
                 tex.height = tex.processedCanvas.height;
                 tex.ratio = this.computeRatio(tex.width, tex.height);
@@ -200,6 +208,69 @@ const TextureLibrary = {
             ctx.drawImage(img, offX, offY, drawW, drawH);
         }
 
+        return canvas;
+    },
+
+    /**
+     * Apply hue, saturation, brightness and contrast adjustments to a canvas.
+     * Returns a new canvas with the adjustments baked in.
+     */
+    applyColorAdjustments(srcCanvas) {
+        const hue        = parseInt(document.getElementById('texlib-hue').value, 10);
+        const saturation = parseInt(document.getElementById('texlib-saturation').value, 10);
+        const brightness = parseInt(document.getElementById('texlib-brightness').value, 10);
+        const contrast   = parseInt(document.getElementById('texlib-contrast').value, 10);
+
+        // Skip if all are at defaults
+        if (hue === 0 && saturation === 0 && brightness === 0 && contrast === 0) {
+            return srcCanvas;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width  = srcCanvas.width;
+        canvas.height = srcCanvas.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(srcCanvas, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imageData.data;
+
+        // Contrast factor: maps [-100, 100] to a multiplier
+        const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+        for (let i = 0; i < d.length; i += 4) {
+            let r = d[i], g = d[i + 1], b = d[i + 2];
+
+            // ── Hue & Saturation via HSL ──────────────────────────
+            if (hue !== 0 || saturation !== 0) {
+                const hsl = Utils.rgbToHsl(r, g, b);
+
+                hsl.h = (hsl.h + hue + 360) % 360;
+                hsl.s = Utils.clamp(hsl.s + saturation, 0, 100);
+
+                const rgb = Utils.hslToRgb(hsl.h, hsl.s, hsl.l);
+                r = rgb.r; g = rgb.g; b = rgb.b;
+            }
+
+            // ── Brightness ────────────────────────────────────────
+            if (brightness !== 0) {
+                r = Utils.clamp(r + brightness * 2.55, 0, 255);
+                g = Utils.clamp(g + brightness * 2.55, 0, 255);
+                b = Utils.clamp(b + brightness * 2.55, 0, 255);
+            }
+
+            // ── Contrast ──────────────────────────────────────────
+            if (contrast !== 0) {
+                r = Utils.clamp(contrastFactor * (r - 128) + 128, 0, 255);
+                g = Utils.clamp(contrastFactor * (g - 128) + 128, 0, 255);
+                b = Utils.clamp(contrastFactor * (b - 128) + 128, 0, 255);
+            }
+
+            d[i] = r; d[i + 1] = g; d[i + 2] = b;
+            // alpha (d[i+3]) is unchanged
+        }
+
+        ctx.putImageData(imageData, 0, 0);
         return canvas;
     },
 
@@ -352,6 +423,31 @@ const TextureLibrary = {
     },
 
     /**
+     * Reset all processed changes — restores every texture to its original uploaded state
+     * and resets all adjustment sliders to defaults.
+     */
+    resetAll() {
+        if (this.textures.length === 0) return;
+
+        for (const tex of this.textures) {
+            tex.processedCanvas = null;
+            tex.width  = tex.originalImage.width;
+            tex.height = tex.originalImage.height;
+            tex.ratio  = this.computeRatio(tex.width, tex.height);
+        }
+
+        // Reset adjustment sliders to defaults
+        const defaults = { 'texlib-hue': 0, 'texlib-saturation': 0, 'texlib-brightness': 0, 'texlib-contrast': 0 };
+        for (const [id, val] of Object.entries(defaults)) {
+            const el = document.getElementById(id);
+            if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+        }
+
+        this.updateUI();
+        Utils.showToast('All changes undone — textures restored to originals', 'success');
+    },
+
+    /**
      * Clear entire library
      */
     clearAll() {
@@ -360,6 +456,7 @@ const TextureLibrary = {
         this.nextId = 1;
         document.getElementById('texlib-download-all').disabled = true;
         document.getElementById('texlib-clear-all').disabled = true;
+        document.getElementById('texlib-reset-all').disabled = true;
         this.updateUI();
         Utils.showToast('Library cleared', 'success');
     },
@@ -533,6 +630,7 @@ const TextureLibrary = {
     updateButtons() {
         const hasTextures = this.textures.length > 0;
         document.getElementById('texlib-clear-all').disabled = !hasTextures;
+        document.getElementById('texlib-reset-all').disabled = !hasTextures;
 
         const anyProcessed = this.textures.some(t => t.processedCanvas);
         document.getElementById('texlib-download-all').disabled = !hasTextures;

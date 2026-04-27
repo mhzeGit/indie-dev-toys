@@ -47,6 +47,11 @@ const SeamlessTextureTool = {
             this.downloadResult();
         });
 
+        // Reset button
+        document.getElementById('seamless-reset').addEventListener('click', () => {
+            this.resetImage();
+        });
+
         // Preview tabs
         document.querySelectorAll('#seamless-texture .preview-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -276,8 +281,9 @@ const SeamlessTextureTool = {
                 this.refreshCurrentPreview();
             }
             
-            // Enable download
+            // Enable download and reset
             document.getElementById('seamless-download').disabled = false;
+            document.getElementById('seamless-reset').disabled = false;
             
             // Update info
             this.updateInfo(`Result: ${this.resultImageData.width} × ${this.resultImageData.height}px | Method: ${method}`);
@@ -290,6 +296,20 @@ const SeamlessTextureTool = {
             Utils.showToast('Processing failed: ' + error.message, 'error');
             console.error(error);
         }
+    },
+
+    /**
+     * Reset to original — clears the processed result and restores the original preview
+     */
+    resetImage() {
+        if (!this.originalImage) return;
+        this.resultImageData = null;
+        this.hasProcessed = false;
+        document.getElementById('seamless-download').disabled = true;
+        document.getElementById('seamless-reset').disabled = true;
+        this.showOriginal();
+        this.updateInfo(`Original: ${this.originalImage.width} × ${this.originalImage.height}px`);
+        Utils.showToast('Reset to original', 'success');
     },
 
     /**
