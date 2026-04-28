@@ -18,7 +18,8 @@ const App = {
         'channel-packer': { view: 'views/channel-packer.html', init: () => ChannelPacker.init() },
         'atlas-packer': { view: 'views/atlas-packer.html', init: () => AtlasPacker.init() },
         'sprite-extractor': { view: 'views/sprite-extractor.html', init: () => SpriteExtractor.init() },
-        'texture-library': { view: 'views/texture-library.html', init: () => TextureLibrary.init() }
+        'texture-library': { view: 'views/texture-library.html', init: () => TextureLibrary.init() },
+        'file-converter':  { view: 'views/file-converter.html',  init: () => FileConverter.init() }
     },
 
     /**

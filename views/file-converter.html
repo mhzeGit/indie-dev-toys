@@ -1,0 +1,83 @@
+<!-- File Converter Tool -->
+<div id="file-converter" class="tool-view">
+    <div class="tool-header">
+        <h2><i class="fas fa-exchange-alt"></i> File Converter</h2>
+        <p>Convert images, audio, and video files entirely in your browser. No server, no uploads.</p>
+    </div>
+
+    <div class="fc-container">
+
+        <!-- Drop Zone -->
+        <div class="fc-dropzone" id="fc-dropzone">
+            <i class="fas fa-cloud-upload-alt fc-dropzone-icon"></i>
+            <span class="fc-dropzone-title">Drop files here or click to select</span>
+            <span class="fc-dropzone-hint">
+                Images: JPG, PNG, WebP, BMP, GIF, TIFF, ICO, SVG &nbsp;|&nbsp;
+                Audio: MP3, WAV, OGG, FLAC, AAC, M4A, OPUS &nbsp;|&nbsp;
+                Video: MP4, WebM, MOV, AVI, MKV, FLV, WMV
+            </span>
+            <input type="file" id="fc-file-input" multiple
+                accept="image/*,audio/*,video/*,.flac,.ogg,.opus,.mkv,.avi,.flv,.wmv,.tiff,.tif,.ico,.bmp,.svg">
+        </div>
+
+        <!-- Codec Loading Bar -->
+        <div class="fc-codec-bar" id="fc-codec-bar" style="display:none;">
+            <i class="fas fa-cog fa-spin"></i>
+            <span id="fc-codec-text">Loading audio/video codec (first use only, ~31 MB)…</span>
+            <div class="fc-codec-progress-wrap">
+                <div class="fc-codec-progress" id="fc-codec-progress"></div>
+            </div>
+        </div>
+
+        <!-- File List Section -->
+        <div class="fc-files-section" id="fc-files-section" style="display:none;">
+
+            <!-- Toolbar -->
+            <div class="fc-toolbar">
+                <span class="fc-files-count" id="fc-files-count">0 files</span>
+                <div class="fc-toolbar-right">
+                    <label class="fc-quality-wrap">
+                        Quality&nbsp;<span id="fc-quality-value">85</span>%
+                        <input type="range" id="fc-quality" min="1" max="100" value="85" class="fc-quality-range"
+                            title="Applies to JPEG, WebP (image), MP3, OGG, AAC, OPUS (audio), and video outputs">
+                    </label>
+                    <button class="btn btn-sm" id="fc-clear-btn" title="Remove all files">
+                        <i class="fas fa-trash-alt"></i> Clear all
+                    </button>
+                </div>
+            </div>
+
+            <!-- File Table -->
+            <div class="fc-table-wrap">
+                <table class="fc-table">
+                    <thead>
+                        <tr>
+                            <th class="fc-col-icon"></th>
+                            <th class="fc-col-name">File</th>
+                            <th class="fc-col-size">Size</th>
+                            <th class="fc-col-type">Type</th>
+                            <th class="fc-col-arrow"></th>
+                            <th class="fc-col-format">Convert to</th>
+                            <th class="fc-col-status">Status</th>
+                            <th class="fc-col-actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="fc-file-list">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="fc-bottom-bar">
+                <button class="btn btn-primary" id="fc-convert-btn">
+                    <i class="fas fa-magic"></i> Convert All
+                </button>
+                <button class="btn" id="fc-download-all-btn" style="display:none;">
+                    <i class="fas fa-file-archive"></i> Download All as ZIP
+                </button>
+                <span class="fc-result-info" id="fc-result-info"></span>
+            </div>
+        </div>
+
+    </div>
+</div>
