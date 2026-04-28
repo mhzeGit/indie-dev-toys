@@ -127,7 +127,12 @@ const FileConverter = (() => {
         showCodecBar(true);
 
         try {
-            const { FFmpeg } = FFmpegWASM;
+            // Use the ESM build via dynamic import (proxied same-origin).
+            // The ESM worker uses import(/* webpackIgnore: true */ coreURL) which
+            // bypasses webpack's __webpack_require__, so blob: URLs work correctly.
+            // The UMD build's webpack-bundled worker was intercepting importScripts/
+            // require and failing with "Cannot find module 'blob:...'".
+            const { FFmpeg } = await import('/_cdn/ffmpeg-esm/index.js');
 
             ffmpeg = new FFmpeg();
 
@@ -140,10 +145,6 @@ const FileConverter = (() => {
                 setCodecProgress(pct);
             });
 
-            // Both ffmpeg.js and ffmpeg-core are served through the local proxy
-            // (/_cdn/) so every URL is same-origin.  A blob: URL for coreURL
-            // causes webpack inside the FFmpeg worker to call require(blobURL)
-            // which fails with "Cannot find module 'blob:...'"; a plain path fixes it.
             const CORE_PATH = '/_cdn/ffmpeg-core';
 
             // Download WASM via XHR so we can report real progress.
@@ -152,10 +153,15 @@ const FileConverter = (() => {
                 'application/wasm'
             );
 
-            await ffmpeg.load({
-                coreURL: `${CORE_PATH}/ffmpeg-core.js`,
-                wasmURL,   // blob: URL from our XHR progress loader
-            });
+            // Wrap the core JS in a blob: URL so the ESM worker's
+            // import(/* webpackIgnore: true */ coreURL) can load it
+            // without any CORP/COEP restriction.
+            const coreURL = await fetchAsBlobURL(
+                `${CORE_PATH}/ffmpeg-core.js`,
+                'text/javascript'
+            );
+
+            await ffmpeg.load({ coreURL, wasmURL });
 
             ffmpegLoaded  = true;
             ffmpegLoading = false;
@@ -202,6 +208,15 @@ const FileConverter = (() => {
             xhr.onerror  = () => reject(new Error('Network error loading WASM'));
             xhr.send();
         });
+    }
+
+    // Fetches a URL via fetch() and returns a blob: URL with the given MIME type.
+    // Used for the core JS so the ESM worker's dynamic import() can load it.
+    async function fetchAsBlobURL(url, mimeType) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status} fetching ${url}`);
+        const buf  = await response.arrayBuffer();
+        return URL.createObjectURL(new Blob([buf], { type: mimeType }));
     }
 
     function showCodecBar(visible) {
@@ -413,7 +428,6 @@ const FileConverter = (() => {
 
     async function convertMedia(entry) {
         const { file, category, targetFmt } = entry;
-        const { fetchFile } = FFmpegUtil;
 
         await ensureFFmpeg();
 
@@ -422,7 +436,7 @@ const FileConverter = (() => {
         const outName = `out_${entry.id}.${targetFmt}`;
 
         // Write input file
-        const fileData = await fetchFile(file);
+        const fileData = new Uint8Array(await file.arrayBuffer());
         await ffmpeg.writeFile(inName, fileData);
 
         // Build args

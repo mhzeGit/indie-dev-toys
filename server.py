@@ -16,12 +16,14 @@ import sys
 import os
 
 # Map local proxy prefix → CDN base URL
-# ffmpeg.js and ffmpeg-core are both proxied so every URL the FFmpeg worker
-# receives is same-origin.  Passing a blob: URL for coreURL causes webpack
-# inside the worker to call require(blobURL) which fails with
-# "Cannot find module 'blob:...'"; a plain /_cdn/ path avoids that.
+# /_cdn/ffmpeg-esm/ proxies the ESM build of @ffmpeg/ffmpeg so that
+# dynamic import('/_cdn/ffmpeg-esm/index.js') is same-origin.  The ESM worker
+# uses import(/* webpackIgnore: true */ coreURL) which bypasses webpack's
+# __webpack_require__ and can load any URL – fixing the
+# "Cannot find module 'blob:...'" error that the UMD/webpack worker caused.
 CDN_MAP = {
     '/_cdn/ffmpeg/':      'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/',
+    '/_cdn/ffmpeg-esm/':  'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/esm/',
     '/_cdn/ffmpeg-util/': 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/',
     '/_cdn/ffmpeg-core/': 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/',
 }
