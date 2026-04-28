@@ -55,9 +55,29 @@ const FileConverter = (() => {
         video: 'fas fa-film'
     };
 
+    // ─── Per-format default settings ───────────────────────────────────────────
+
+    const DEFAULT_SETTINGS = {
+        image: { quality: 85, maxWidth: '', maxHeight: '' },
+        audio: { startTime: '', endTime: '', sampleRate: 'original', channels: 'original' },
+        gif:   { startTime: '', endTime: '', fps: 10, width: 480 },
+        video: { startTime: '', endTime: '', resolution: 'original', fps: 'original', muteAudio: false },
+    };
+
+    function getSettingsKey(category, targetFmt) {
+        if (category === 'image') return 'image';
+        if (category === 'audio') return 'audio';
+        if (category === 'video' && targetFmt === 'gif') return 'gif';
+        return 'video';
+    }
+
+    function getDefaultSettings(category, targetFmt) {
+        return { ...DEFAULT_SETTINGS[getSettingsKey(category, targetFmt)] };
+    }
+
     // ─── State ─────────────────────────────────────────────────────────────────
 
-    let fileEntries   = [];   // { id, file, category, targetFmt, status, resultBlob }
+    let fileEntries   = [];   // { id, file, category, targetFmt, settings, status, resultBlob }
     let nextId        = 0;
     let ffmpeg        = null;
     let ffmpegLoaded  = false;
@@ -108,7 +128,7 @@ const FileConverter = (() => {
 
         try {
             const { FFmpeg }      = FFmpegWASM;
-            const { toBlobURL, fetchFile: _ff } = FFmpegUtil;
+            const { toBlobURL }   = FFmpegUtil;
 
             ffmpeg = new FFmpeg();
 
@@ -117,22 +137,27 @@ const FileConverter = (() => {
             });
 
             ffmpeg.on('progress', ({ progress }) => {
-                // progress is 0-1 during encode; used per-file via convertMedia
                 const pct = Math.min(100, Math.round(progress * 100));
                 setCodecProgress(pct);
             });
 
-            const BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+            // The proxy (/_cdn/ffmpeg/) makes ffmpeg.js same-origin so its
+            // worker chunk loads without a cross-origin error.
+            // The core files are fetched from CDN directly (COEP credentialless
+            // permits this) and blobified so webpack inside the worker does NOT
+            // intercept the URL as a module ID (which would fail with
+            // "Cannot find module").
+            const CORE_CDN = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
 
-            // Track download progress for the wasm file via XHR
+            // Download WASM via XHR so we can report real progress.
             const wasmURL = await loadWasmWithProgress(
-                `${BASE}/ffmpeg-core.wasm`,
+                `${CORE_CDN}/ffmpeg-core.wasm`,
                 'application/wasm'
             );
 
             await ffmpeg.load({
-                coreURL: await toBlobURL(`${BASE}/ffmpeg-core.js`, 'text/javascript'),
-                wasmURL,
+                coreURL: await toBlobURL(`${CORE_CDN}/ffmpeg-core.js`, 'text/javascript'),
+                wasmURL,   // already a blob: URL from our XHR loader
             });
 
             ffmpegLoaded  = true;
@@ -147,7 +172,9 @@ const FileConverter = (() => {
             showCodecBar(false);
             ffmpegLoadResolvers.forEach(r => r());
             ffmpegLoadResolvers = [];
-            throw new Error('Failed to load FFmpeg: ' + err.message);
+            const msg = err?.message || err?.toString() || JSON.stringify(err) || 'unknown error';
+            console.error('[FFmpeg load error]', err);
+            throw new Error('Failed to load FFmpeg: ' + msg);
         }
     }
 
@@ -190,24 +217,40 @@ const FileConverter = (() => {
 
     // ─── Image conversion (Canvas) ─────────────────────────────────────────────
 
-    async function convertImage(file, targetFmt, q) {
+    async function convertImage(file, targetFmt, settings) {
+        const q = settings.quality ?? 85;
         return new Promise((resolve, reject) => {
             const img = new Image();
             const url = URL.createObjectURL(file);
 
             img.onload = () => {
                 URL.revokeObjectURL(url);
+
+                let w = img.naturalWidth;
+                let h = img.naturalHeight;
+
+                // Apply max-dimension constraints (preserving aspect ratio)
+                const maxW = parseInt(settings.maxWidth)  || 0;
+                const maxH = parseInt(settings.maxHeight) || 0;
+                if (maxW > 0 || maxH > 0) {
+                    let scale = 1;
+                    if (maxW > 0 && w > maxW) scale = Math.min(scale, maxW / w);
+                    if (maxH > 0 && h > maxH) scale = Math.min(scale, maxH / h);
+                    w = Math.round(w * scale);
+                    h = Math.round(h * scale);
+                }
+
                 const canvas = document.createElement('canvas');
-                canvas.width  = img.naturalWidth;
-                canvas.height = img.naturalHeight;
+                canvas.width  = w;
+                canvas.height = h;
                 const ctx = canvas.getContext('2d');
 
                 // JPEG / BMP have no transparency – fill white background
                 if (targetFmt === 'jpeg' || targetFmt === 'bmp') {
                     ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillRect(0, 0, w, h);
                 }
-                ctx.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0, w, h);
 
                 if (targetFmt === 'bmp') {
                     resolve(canvasToBMP(canvas));
@@ -286,54 +329,88 @@ const FileConverter = (() => {
 
     // ─── Audio / Video conversion (FFmpeg.wasm) ────────────────────────────────
 
-    function audioFFmpegArgs(targetFmt, q) {
-        // q = 1-100
-        const mp3q   = Math.round(9 - (q / 100) * 9);          // 0 best
-        const vorbq  = Math.round((q / 100) * 10);             // 10 best
-        const bitrate = Math.max(48, Math.round(32 + (q / 100) * 288)) + 'k';  // 48k-320k
+    function audioFFmpegArgs(targetFmt, q, settings) {
+        const mp3q    = Math.round(9 - (q / 100) * 9);
+        const vorbq   = Math.round((q / 100) * 10);
+        const bitrate = Math.max(48, Math.round(32 + (q / 100) * 288)) + 'k';
 
+        const trimArgs = [];
+        if (settings.startTime) trimArgs.push('-ss', String(settings.startTime));
+        if (settings.endTime)   trimArgs.push('-to', String(settings.endTime));
+
+        const srArgs = settings.sampleRate && settings.sampleRate !== 'original'
+            ? ['-ar', settings.sampleRate] : [];
+        const chArgs = settings.channels && settings.channels !== 'original'
+            ? ['-ac', settings.channels] : [];
+
+        let codecArgs;
         switch (targetFmt) {
-            case 'mp3':  return ['-vn', '-c:a', 'libmp3lame',  '-q:a', String(mp3q)];
-            case 'wav':  return ['-vn', '-c:a', 'pcm_s16le'];
-            case 'ogg':  return ['-vn', '-c:a', 'libvorbis',   '-q:a', String(vorbq)];
-            case 'flac': return ['-vn', '-c:a', 'flac'];
-            case 'aac':  return ['-vn', '-c:a', 'aac',         '-b:a', bitrate];
-            case 'opus': return ['-vn', '-c:a', 'libopus',     '-b:a', bitrate];
-            default:     return ['-vn', '-c:a', 'aac'];
+            case 'mp3':  codecArgs = ['-c:a', 'libmp3lame', '-q:a', String(mp3q)]; break;
+            case 'wav':  codecArgs = ['-c:a', 'pcm_s16le']; break;
+            case 'ogg':  codecArgs = ['-c:a', 'libvorbis',  '-q:a', String(vorbq)]; break;
+            case 'flac': codecArgs = ['-c:a', 'flac']; break;
+            case 'aac':  codecArgs = ['-c:a', 'aac',        '-b:a', bitrate]; break;
+            case 'opus': codecArgs = ['-c:a', 'libopus',    '-b:a', bitrate]; break;
+            default:     codecArgs = ['-c:a', 'aac'];
         }
+
+        return [...trimArgs, '-vn', ...codecArgs, ...srArgs, ...chArgs];
     }
 
-    function videoFFmpegArgs(targetFmt, q) {
-        // Map quality 1-100 → CRF scale (0=lossless, higher=worse)
-        const crf264  = Math.round(51 - (q / 100) * 46);       // 5-51
-        const crfVP9  = Math.round(63 - (q / 100) * 58);       // 5-63
-        const bitrate = Math.max(48, Math.round(32 + (q / 100) * 288)) + 'k';
+    function videoFFmpegArgs(targetFmt, q, settings) {
+        const crf264 = Math.round(51 - (q / 100) * 46);
+        const crfVP9 = Math.round(63 - (q / 100) * 58);
+
+        const trimArgs = [];
+        if (settings.startTime) trimArgs.push('-ss', String(settings.startTime));
+        if (settings.endTime)   trimArgs.push('-to', String(settings.endTime));
+
+        // GIF branch with per-file fps and width
+        if (targetFmt === 'gif') {
+            const fps   = settings.fps ?? 10;
+            const width = (!settings.width || settings.width === 'original') ? 'iw' : String(settings.width);
+            const scale = `scale=${width}:-1:flags=lanczos`;
+            return [
+                ...trimArgs,
+                '-vf',
+                `fps=${fps},${scale},split[s0][s1];` +
+                `[s0]palettegen=max_colors=256:stats_mode=diff[p];` +
+                `[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`,
+                '-loop', '0'
+            ];
+        }
+
+        // Resolution / FPS filters
+        const resMap = { '1080p': '-2:1080', '720p': '-2:720', '480p': '-2:480', '360p': '-2:360' };
+        const vfParts = [];
+        if (settings.resolution && settings.resolution !== 'original') {
+            vfParts.push(`scale=${resMap[settings.resolution]}`);
+        }
+        if (settings.fps && settings.fps !== 'original') {
+            vfParts.push(`fps=${settings.fps}`);
+        }
+        const vfArgs    = vfParts.length ? ['-vf', vfParts.join(',')] : [];
+        const audioArgs = settings.muteAudio ? ['-an'] : ['-c:a', 'aac', '-b:a', '192k'];
+        const webmAudio = settings.muteAudio ? ['-an'] : ['-c:a', 'libopus', '-b:a', '128k'];
 
         switch (targetFmt) {
             case 'mp4':
-                return ['-c:v', 'libx264',    '-crf', String(crf264),  '-preset', 'fast',
-                        '-c:a', 'aac',        '-b:a', '192k',          '-movflags', '+faststart'];
+                return [...trimArgs, '-c:v', 'libx264',    '-crf', String(crf264), '-preset', 'fast',
+                        ...vfArgs, ...audioArgs, '-movflags', '+faststart'];
             case 'webm':
-                return ['-c:v', 'libvpx-vp9', '-crf', String(crfVP9),  '-b:v', '0',
-                        '-c:a', 'libopus',    '-b:a', '128k'];
+                return [...trimArgs, '-c:v', 'libvpx-vp9', '-crf', String(crfVP9), '-b:v', '0',
+                        ...vfArgs, ...webmAudio];
             case 'mov':
-                return ['-c:v', 'libx264',    '-crf', String(crf264),  '-preset', 'fast',
-                        '-c:a', 'aac',        '-b:a', '192k'];
+                return [...trimArgs, '-c:v', 'libx264',    '-crf', String(crf264), '-preset', 'fast',
+                        ...vfArgs, ...audioArgs];
             case 'avi':
-                return ['-c:v', 'libx264',    '-crf', String(crf264),
-                        '-c:a', 'aac',        '-b:a', '192k'];
+                return [...trimArgs, '-c:v', 'libx264',    '-crf', String(crf264),
+                        ...vfArgs, ...audioArgs];
             case 'mkv':
-                return ['-c:v', 'libx264',    '-crf', String(crf264),  '-preset', 'fast',
-                        '-c:a', 'aac'];
-            case 'gif':
-                // Two-pass palette GIF for high quality
-                return ['-vf',
-                    'fps=10,scale=min(480\\,iw):-1:flags=lanczos,split[s0][s1];' +
-                    '[s0]palettegen=max_colors=256:stats_mode=diff[p];' +
-                    '[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle',
-                    '-loop', '0'];
+                return [...trimArgs, '-c:v', 'libx264',    '-crf', String(crf264), '-preset', 'fast',
+                        ...vfArgs, ...(settings.muteAudio ? ['-an'] : ['-c:a', 'aac'])];
             default:
-                return ['-c:v', 'libx264', '-c:a', 'aac'];
+                return [...trimArgs, '-c:v', 'libx264', ...vfArgs, ...audioArgs];
         }
     }
 
@@ -353,8 +430,8 @@ const FileConverter = (() => {
 
         // Build args
         const specificArgs = category === 'audio'
-            ? audioFFmpegArgs(targetFmt, quality())
-            : videoFFmpegArgs(targetFmt, quality());
+            ? audioFFmpegArgs(targetFmt, quality(), entry.settings)
+            : videoFFmpegArgs(targetFmt, quality(), entry.settings);
 
         const args = ['-i', inName, ...specificArgs, '-y', outName];
 
@@ -393,6 +470,7 @@ const FileConverter = (() => {
                 file,
                 category:   cat,
                 targetFmt:  defaultFmt,
+                settings:   getDefaultSettings(cat, defaultFmt),
                 status:     'idle',    // idle | converting | done | error
                 resultBlob: null,
                 errorMsg:   ''
@@ -409,8 +487,8 @@ const FileConverter = (() => {
 
     function removeEntry(id) {
         fileEntries = fileEntries.filter(e => e.id !== id);
-        const row = document.querySelector(`[data-fc-id="${id}"]`);
-        if (row) row.remove();
+        document.querySelector(`[data-fc-id="${id}"]`)?.remove();
+        document.getElementById(`fc-settings-row-${id}`)?.remove();
         updateUI();
     }
 
@@ -428,6 +506,9 @@ const FileConverter = (() => {
             .map(f => `<option value="${f}"${f === targetFmt ? ' selected' : ''}>${f.toUpperCase()}</option>`)
             .join('');
 
+        const fragment = document.createDocumentFragment();
+
+        // Main file row
         const tr = document.createElement('tr');
         tr.dataset.fcId = id;
         tr.innerHTML = `
@@ -445,6 +526,10 @@ const FileConverter = (() => {
                 <span class="fc-status fc-status-idle" id="fc-status-${id}">—</span>
             </td>
             <td class="fc-col-actions">
+                <button class="fc-btn-settings" id="fc-settings-btn-${id}" title="Conversion settings"
+                    onclick="FileConverter.toggleSettings(${id})">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
                 <button class="fc-btn-dl" id="fc-dl-${id}" title="Download" style="display:none;">
                     <i class="fas fa-download"></i>
                 </button>
@@ -453,17 +538,31 @@ const FileConverter = (() => {
                 </button>
             </td>`;
 
-        dom.fileList.appendChild(tr);
+        fragment.appendChild(tr);
+
+        // Hidden settings row – content rendered on first open
+        const settingsTr = document.createElement('tr');
+        settingsTr.id = `fc-settings-row-${id}`;
+        settingsTr.style.display = 'none';
+        settingsTr.innerHTML = `<td class="fc-settings-cell" colspan="8"></td>`;
+        fragment.appendChild(settingsTr);
+
+        dom.fileList.appendChild(fragment);
 
         // Format selector change
         tr.querySelector('.fc-format-select').addEventListener('change', e => {
             const entry = fileEntries.find(x => x.id === parseInt(e.target.dataset.id, 10));
-            if (entry) {
-                entry.targetFmt  = e.target.value;
-                entry.status     = 'idle';
-                entry.resultBlob = null;
-                setEntryStatus(entry.id, 'idle');
-                document.getElementById(`fc-dl-${entry.id}`).style.display = 'none';
+            if (!entry) return;
+            entry.targetFmt  = e.target.value;
+            entry.settings   = getDefaultSettings(entry.category, entry.targetFmt);
+            entry.status     = 'idle';
+            entry.resultBlob = null;
+            setEntryStatus(entry.id, 'idle');
+            document.getElementById(`fc-dl-${entry.id}`).style.display = 'none';
+            // If settings panel is open, re-render it for the new format
+            const sr = document.getElementById(`fc-settings-row-${entry.id}`);
+            if (sr && sr.style.display !== 'none') {
+                sr.querySelector('.fc-settings-cell').innerHTML = renderSettingsPanel(entry);
             }
         });
 
@@ -471,6 +570,210 @@ const FileConverter = (() => {
         tr.querySelector('.fc-btn-rm').addEventListener('click', e => {
             removeEntry(parseInt(e.currentTarget.dataset.id, 10));
         });
+    }
+
+    // ─── Settings panel ────────────────────────────────────────────────────────
+
+    function renderSettingsPanel(entry) {
+        const { id, settings } = entry;
+        const key = getSettingsKey(entry.category, entry.targetFmt);
+
+        const numInput = (sid, val, placeholder, step = '1', min = '0') =>
+            `<input type="number" class="fc-setting-input" id="fc-s-${id}-${sid}"
+                value="${escapeHtml(String(val ?? ''))}" placeholder="${placeholder}"
+                min="${min}" step="${step}">`;
+
+        const selInput = (sid, pairs, current) =>
+            `<select class="fc-setting-select" id="fc-s-${id}-${sid}">` +
+            pairs.map(([v, l]) =>
+                `<option value="${v}"${String(current) === String(v) ? ' selected' : ''}>${l}</option>`
+            ).join('') + `</select>`;
+
+        let fields = '';
+
+        if (key === 'image') {
+            fields = `
+                <div class="fc-setting">
+                    <label>Quality <span class="fc-setting-val" id="fc-s-${id}-qlabel">${settings.quality}%</span></label>
+                    <input type="range" class="fc-setting-range" id="fc-s-${id}-quality"
+                        min="1" max="100" value="${settings.quality}"
+                        oninput="document.getElementById('fc-s-${id}-qlabel').textContent=this.value+'%'">
+                    <small>Applies to JPEG &amp; WebP only</small>
+                </div>
+                <div class="fc-setting">
+                    <label>Max Width (px)</label>
+                    ${numInput('maxwidth', settings.maxWidth, 'Original', '1', '1')}
+                </div>
+                <div class="fc-setting">
+                    <label>Max Height (px)</label>
+                    ${numInput('maxheight', settings.maxHeight, 'Original', '1', '1')}
+                </div>`;
+        } else if (key === 'audio') {
+            fields = `
+                <div class="fc-setting">
+                    <label>Start Time (s)</label>
+                    ${numInput('start', settings.startTime, '0', '0.1')}
+                </div>
+                <div class="fc-setting">
+                    <label>End Time (s)</label>
+                    ${numInput('end', settings.endTime, 'Full length', '0.1')}
+                </div>
+                <div class="fc-setting">
+                    <label>Sample Rate</label>
+                    ${selInput('sr', [
+                        ['original','Original'],['48000','48 000 Hz'],['44100','44 100 Hz'],
+                        ['22050','22 050 Hz'],['16000','16 000 Hz'],['8000','8 000 Hz'],
+                    ], settings.sampleRate)}
+                </div>
+                <div class="fc-setting">
+                    <label>Channels</label>
+                    ${selInput('ch', [
+                        ['original','Original'],['2','Stereo'],['1','Mono'],
+                    ], settings.channels)}
+                </div>`;
+        } else if (key === 'gif') {
+            fields = `
+                <div class="fc-setting">
+                    <label>Start Time (s)</label>
+                    ${numInput('start', settings.startTime, '0', '0.1')}
+                </div>
+                <div class="fc-setting">
+                    <label>End Time (s)</label>
+                    ${numInput('end', settings.endTime, 'Full length', '0.1')}
+                </div>
+                <div class="fc-setting">
+                    <label>Frame Rate</label>
+                    ${selInput('fps', [5,8,10,12,15,20,24].map(v => [String(v), v + ' fps']), settings.fps)}
+                </div>
+                <div class="fc-setting">
+                    <label>Output Width</label>
+                    ${selInput('width', [
+                        ['original','Original (no resize)'],
+                        ...['1280','960','720','640','480','360','240'].map(v => [v, v + 'px']),
+                    ], settings.width)}
+                </div>`;
+        } else {
+            // video → video
+            fields = `
+                <div class="fc-setting">
+                    <label>Start Time (s)</label>
+                    ${numInput('start', settings.startTime, '0', '0.1')}
+                </div>
+                <div class="fc-setting">
+                    <label>End Time (s)</label>
+                    ${numInput('end', settings.endTime, 'Full length', '0.1')}
+                </div>
+                <div class="fc-setting">
+                    <label>Resolution</label>
+                    ${selInput('res', [
+                        ['original','Original'],['1080p','1080p'],
+                        ['720p','720p'],['480p','480p'],['360p','360p'],
+                    ], settings.resolution)}
+                </div>
+                <div class="fc-setting">
+                    <label>Frame Rate</label>
+                    ${selInput('fps', [
+                        ['original','Original'],
+                        ...['60','30','24','15'].map(v => [v, v + ' fps']),
+                    ], settings.fps)}
+                </div>
+                <div class="fc-setting fc-setting-check">
+                    <label class="fc-check-label">
+                        <input type="checkbox" id="fc-s-${id}-mute"${settings.muteAudio ? ' checked' : ''}>
+                        Remove audio track
+                    </label>
+                </div>`;
+        }
+
+        return `<div class="fc-settings-panel">
+            <div class="fc-settings-grid">${fields}</div>
+            <div class="fc-settings-footer">
+                <button class="fc-btn-apply-all" onclick="FileConverter.applySettingsToAll(${id})">
+                    <i class="fas fa-copy"></i> Apply to all matching files
+                </button>
+            </div>
+        </div>`;
+    }
+
+    function readSettings(id) {
+        const entry = fileEntries.find(e => e.id === id);
+        if (!entry) return {};
+        const key = getSettingsKey(entry.category, entry.targetFmt);
+        const g   = sid => document.getElementById(`fc-s-${id}-${sid}`);
+
+        if (key === 'image') return {
+            quality:   parseInt(g('quality')?.value   ?? entry.settings.quality, 10),
+            maxWidth:  g('maxwidth')?.value  ?? '',
+            maxHeight: g('maxheight')?.value ?? '',
+        };
+        if (key === 'audio') return {
+            startTime:  g('start')?.value ?? '',
+            endTime:    g('end')?.value   ?? '',
+            sampleRate: g('sr')?.value    ?? 'original',
+            channels:   g('ch')?.value    ?? 'original',
+        };
+        if (key === 'gif') return {
+            startTime: g('start')?.value ?? '',
+            endTime:   g('end')?.value   ?? '',
+            fps:       parseInt(g('fps')?.value ?? 10, 10),
+            width:     g('width')?.value === 'original' ? 'original' : parseInt(g('width')?.value ?? 480, 10),
+        };
+        // video
+        return {
+            startTime:  g('start')?.value ?? '',
+            endTime:    g('end')?.value   ?? '',
+            resolution: g('res')?.value   ?? 'original',
+            fps:        g('fps')?.value   ?? 'original',
+            muteAudio:  g('mute')?.checked ?? false,
+        };
+    }
+
+    function toggleSettings(id) {
+        const entry       = fileEntries.find(e => e.id === id);
+        const settingsRow = document.getElementById(`fc-settings-row-${id}`);
+        const toggleBtn   = document.getElementById(`fc-settings-btn-${id}`);
+        if (!entry || !settingsRow) return;
+
+        const isOpen = settingsRow.style.display !== 'none';
+        if (isOpen) {
+            entry.settings = readSettings(id);
+            settingsRow.style.display = 'none';
+            toggleBtn.classList.remove('active');
+        } else {
+            settingsRow.querySelector('.fc-settings-cell').innerHTML = renderSettingsPanel(entry);
+            settingsRow.style.display = '';
+            toggleBtn.classList.add('active');
+        }
+    }
+
+    function applySettingsToAll(id) {
+        const source = fileEntries.find(e => e.id === id);
+        if (!source) return;
+
+        source.settings = readSettings(id);
+        const sourceKey = getSettingsKey(source.category, source.targetFmt);
+
+        let count = 0;
+        fileEntries.forEach(entry => {
+            if (entry.id === id) return;
+            if (getSettingsKey(entry.category, entry.targetFmt) !== sourceKey) return;
+            entry.settings = { ...source.settings };
+            count++;
+            // Refresh if panel is currently open
+            const row = document.getElementById(`fc-settings-row-${entry.id}`);
+            if (row && row.style.display !== 'none') {
+                row.querySelector('.fc-settings-cell').innerHTML = renderSettingsPanel(entry);
+            }
+        });
+
+        if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast(
+                count > 0
+                    ? `Settings applied to ${count} other file${count !== 1 ? 's' : ''}`
+                    : 'No other matching files to apply to',
+                count > 0 ? 'success' : 'warning'
+            );
+        }
     }
 
     function setEntryStatus(id, status, progress) {
@@ -523,6 +826,12 @@ const FileConverter = (() => {
     // ─── Conversion orchestration ──────────────────────────────────────────────
 
     async function convertEntry(entry) {
+        // Save settings from any open panel before converting
+        const settingsRow = document.getElementById(`fc-settings-row-${entry.id}`);
+        if (settingsRow && settingsRow.style.display !== 'none') {
+            entry.settings = readSettings(entry.id);
+        }
+
         entry.status     = 'converting';
         entry.resultBlob = null;
         setEntryStatus(entry.id, 'converting');
@@ -531,7 +840,7 @@ const FileConverter = (() => {
             let blob;
             if (entry.category === 'image') {
                 setEntryStatus(entry.id, 'converting', null);
-                blob = await convertImage(entry.file, entry.targetFmt, quality());
+                blob = await convertImage(entry.file, entry.targetFmt, entry.settings);
             } else {
                 blob = await convertMedia(entry);
             }
@@ -633,7 +942,7 @@ const FileConverter = (() => {
         });
     }
 
-    // ─── Public init ───────────────────────────────────────────────────────────
+    // ─── Public init & exposed functions ──────────────────────────────────────
 
     return {
         init() {
@@ -663,7 +972,10 @@ const FileConverter = (() => {
             dom.convertBtn.addEventListener('click', convertAll);
             dom.downloadAllBtn.addEventListener('click', downloadAll);
             dom.clearBtn.addEventListener('click', clearAll);
-        }
+        },
+
+        toggleSettings(id)      { toggleSettings(id); },
+        applySettingsToAll(id)  { applySettingsToAll(id); }
     };
 
 })();

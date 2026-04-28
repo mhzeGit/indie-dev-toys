@@ -1741,3 +1741,177 @@ input[type="color"] {
     color: var(--text-muted);
     margin-left: auto;
 }
+
+/* ── Settings panel ─────────────────────────────────────────────────────────── */
+.fc-settings-cell {
+    padding: 0 !important;
+    background: var(--bg-primary);
+    border-bottom: 2px solid var(--accent-secondary);
+}
+
+.fc-settings-panel {
+    padding: 16px 20px 14px;
+}
+
+.fc-settings-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+    align-items: flex-start;
+}
+
+.fc-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 140px;
+}
+
+.fc-setting label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.fc-setting-val {
+    color: var(--accent-primary);
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.fc-setting small {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.fc-setting-range {
+    width: 160px !important;
+    cursor: pointer;
+}
+
+.fc-setting-input {
+    padding: 5px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-size: 12px;
+    width: 130px;
+    transition: border-color var(--transition-fast);
+}
+
+.fc-setting-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.fc-setting-select {
+    padding: 5px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+    width: auto;
+    min-width: 130px;
+    transition: border-color var(--transition-fast);
+}
+
+.fc-setting-select:hover,
+.fc-setting-select:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+.fc-setting-check {
+    justify-content: flex-end;
+    padding-top: 18px;
+}
+
+.fc-check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.fc-check-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.fc-settings-footer {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fc-btn-apply-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.fc-btn-apply-all:hover {
+    background: rgba(88,166,255,0.1);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* ── Settings toggle button ───────────────────────────────────────────────────────── */
+.fc-btn-settings {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 12px;
+}
+
+.fc-btn-settings:hover {
+    background: rgba(88,166,255,0.1);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.fc-btn-settings.active {
+    background: rgba(88,166,255,0.15);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}

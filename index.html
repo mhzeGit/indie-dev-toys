@@ -98,8 +98,9 @@
     <script src="js/tools/sprite-extractor.js"></script>
     <script src="js/tools/texture-library.js"></script>
     <!-- FFmpeg.wasm – needed for audio/video conversion (globals available before file-converter.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+    <!-- Loaded via local proxy (/_cdn/) so worker chunks are same-origin; server.py must be used -->
+    <script src="/_cdn/ffmpeg/ffmpeg.js"></script>
+    <script src="/_cdn/ffmpeg-util/index.js"></script>
     <script src="js/tools/file-converter.js"></script>
     <script src="js/app.js"></script>
 </body>
