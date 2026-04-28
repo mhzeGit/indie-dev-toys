@@ -16,13 +16,14 @@ import sys
 import os
 
 # Map local proxy prefix → CDN base URL
-# Only ffmpeg.js itself is proxied – this gives it a same-origin URL so that
-# webpack's auto public-path resolves worker chunks (e.g. 814.ffmpeg.js) as
-# /_cdn/ffmpeg/ paths, avoiding the cross-origin Worker restriction.
-# The core WASM files are fetched directly from CDN (COEP credentialless allows it).
+# ffmpeg.js and ffmpeg-core are both proxied so every URL the FFmpeg worker
+# receives is same-origin.  Passing a blob: URL for coreURL causes webpack
+# inside the worker to call require(blobURL) which fails with
+# "Cannot find module 'blob:...'"; a plain /_cdn/ path avoids that.
 CDN_MAP = {
     '/_cdn/ffmpeg/':      'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/',
     '/_cdn/ffmpeg-util/': 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/',
+    '/_cdn/ffmpeg-core/': 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/',
 }
 
 

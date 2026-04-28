@@ -127,8 +127,7 @@ const FileConverter = (() => {
         showCodecBar(true);
 
         try {
-            const { FFmpeg }      = FFmpegWASM;
-            const { toBlobURL }   = FFmpegUtil;
+            const { FFmpeg } = FFmpegWASM;
 
             ffmpeg = new FFmpeg();
 
@@ -141,23 +140,21 @@ const FileConverter = (() => {
                 setCodecProgress(pct);
             });
 
-            // The proxy (/_cdn/ffmpeg/) makes ffmpeg.js same-origin so its
-            // worker chunk loads without a cross-origin error.
-            // The core files are fetched from CDN directly (COEP credentialless
-            // permits this) and blobified so webpack inside the worker does NOT
-            // intercept the URL as a module ID (which would fail with
-            // "Cannot find module").
-            const CORE_CDN = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+            // Both ffmpeg.js and ffmpeg-core are served through the local proxy
+            // (/_cdn/) so every URL is same-origin.  A blob: URL for coreURL
+            // causes webpack inside the FFmpeg worker to call require(blobURL)
+            // which fails with "Cannot find module 'blob:...'"; a plain path fixes it.
+            const CORE_PATH = '/_cdn/ffmpeg-core';
 
             // Download WASM via XHR so we can report real progress.
             const wasmURL = await loadWasmWithProgress(
-                `${CORE_CDN}/ffmpeg-core.wasm`,
+                `${CORE_PATH}/ffmpeg-core.wasm`,
                 'application/wasm'
             );
 
             await ffmpeg.load({
-                coreURL: await toBlobURL(`${CORE_CDN}/ffmpeg-core.js`, 'text/javascript'),
-                wasmURL,   // already a blob: URL from our XHR loader
+                coreURL: `${CORE_PATH}/ffmpeg-core.js`,
+                wasmURL,   // blob: URL from our XHR progress loader
             });
 
             ffmpegLoaded  = true;
