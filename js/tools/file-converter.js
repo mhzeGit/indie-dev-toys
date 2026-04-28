@@ -20,7 +20,7 @@ const FileConverter = (() => {
         },
         video: {
             input:  ['mp4','webm','mov','avi','mkv','flv','wmv','mpeg','mpg','3gp','m4v'],
-            output: ['mp4','webm','mov','avi','mkv','gif'],
+            output: ['mp4','webm','mov','avi','mkv','gif','mp3','wav','ogg','flac','aac','opus'],
             label:  'Video'
         }
     };
@@ -68,6 +68,7 @@ const FileConverter = (() => {
         if (category === 'image') return 'image';
         if (category === 'audio') return 'audio';
         if (category === 'video' && targetFmt === 'gif') return 'gif';
+        if (category === 'video' && FORMATS.audio.output.includes(targetFmt)) return 'audio';
         return 'video';
     }
 
@@ -137,7 +138,7 @@ const FileConverter = (() => {
             ffmpeg = new FFmpeg();
 
             ffmpeg.on('log', ({ message }) => {
-                console.debug('[FFmpeg]', message);
+                console.log('[FFmpeg]', message);
             });
 
             ffmpeg.on('progress', ({ progress }) => {
@@ -440,7 +441,8 @@ const FileConverter = (() => {
         await ffmpeg.writeFile(inName, fileData);
 
         // Build args
-        const specificArgs = category === 'audio'
+        const extractAudio = category === 'video' && FORMATS.audio.output.includes(targetFmt);
+        const specificArgs = (category === 'audio' || extractAudio)
             ? audioFFmpegArgs(targetFmt, quality(), entry.settings)
             : videoFFmpegArgs(targetFmt, quality(), entry.settings);
 
@@ -453,12 +455,22 @@ const FileConverter = (() => {
         };
         ffmpeg.on('progress', progressHandler);
 
+        let exitCode;
         try {
-            await ffmpeg.exec(args);
+            exitCode = await ffmpeg.exec(args);
         } finally {
             ffmpeg.off('progress', progressHandler);
-            // Cleanup FS
+            // Cleanup input from FS
             try { await ffmpeg.deleteFile(inName); } catch (_) {}
+        }
+
+        if (exitCode !== 0) {
+            try { await ffmpeg.deleteFile(outName); } catch (_) {}
+            throw new Error(
+                `FFmpeg exited with code ${exitCode}. ` +
+                `Open the browser console (F12) to see [FFmpeg] log messages for details. ` +
+                `Possible causes: no audio track in the file, unsupported codec, or insufficient memory.`
+            );
         }
 
         const outData = await ffmpeg.readFile(outName);
