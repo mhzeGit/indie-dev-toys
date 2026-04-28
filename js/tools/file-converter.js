@@ -619,7 +619,6 @@ const FileConverter = (() => {
     function setupDropZone() {
         const dz = dom.dropzone;
 
-        dz.addEventListener('click', () => dom.fileInput.click());
         dom.fileInput.addEventListener('change', e => {
             addFiles(Array.from(e.target.files));
             dom.fileInput.value = '';
