@@ -744,7 +744,7 @@ input[type="color"] {
 }
 
 .preview-content {
-    transform-origin: center center;
+    transform-origin: top left;
     transition: transform 0.1s ease-out;
     pointer-events: none;
 }

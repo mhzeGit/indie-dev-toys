@@ -76,6 +76,11 @@ const SpriteExtractor = {
         
         canvas.width = this.image.width;
         canvas.height = this.image.height;
+        // Set explicit CSS size so the displayed size matches the image pixel size
+        // This prevents the canvas from being scaled by responsive CSS (max-width/max-height)
+        // and keeps the bounds container coordinates aligned with the visual image.
+        canvas.style.width = this.image.width + 'px';
+        canvas.style.height = this.image.height + 'px';
         ctx.drawImage(this.image, 0, 0);
         
         this.imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -113,6 +118,12 @@ const SpriteExtractor = {
             canvas.parentNode.insertBefore(wrapper, canvas);
             wrapper.appendChild(canvas);
         }
+        // Ensure wrapper matches the image pixel size to keep absolute coordinates consistent
+        wrapper.style.width = this.image.width + 'px';
+        wrapper.style.height = this.image.height + 'px';
+        // Prevent CSS responsive max-width/max-height rules from scaling the canvas
+        canvas.style.maxWidth = 'none';
+        canvas.style.maxHeight = 'none';
         
         // Create or get bounds container
         let boundsContainer = document.getElementById('extractor-bounds-container');

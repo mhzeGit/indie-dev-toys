@@ -22,7 +22,18 @@
                     <option value="chroma">Chroma Key (Green/Blue Screen)</option>
                     <option value="luminance">Luminance Threshold</option>
                     <option value="flood">Magic Wand (Flood Fill)</option>
+                    <option value="mask">Custom Mask</option>
                 </select>
+            </div>
+
+            <div class="control-group" id="bgremove-mask-upload-group" style="display: none;">
+                <label>Upload Mask Image</label>
+                <div class="file-upload" id="bgremove-mask-upload">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Drag & drop or click to upload</span>
+                    <input type="file" accept="image/*" id="bgremove-mask-file-input">
+                </div>
+                <small class="control-hint">Black areas will be transparent, white areas opaque.</small>
             </div>
 
             <div class="control-group" id="bgremove-color-picker-group">

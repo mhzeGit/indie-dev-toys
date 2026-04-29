@@ -552,6 +552,35 @@ const ImageProcessor = {
     },
 
     /**
+     * Remove background using a custom mask
+     */
+    removeBackgroundByMask(imageData, maskData, options = {}) {
+        const result = Utils.cloneImageData(imageData);
+        const { invert = false } = options;
+        
+        const width = Math.min(imageData.width, maskData.width);
+        const height = Math.min(imageData.height, maskData.height);
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = (y * width + x) * 4;
+                
+                // Use luminance of mask pixel as alpha value
+                const maskPixel = Utils.getPixel(maskData, x, y);
+                let alpha = Utils.getLuminance(maskPixel.r, maskPixel.g, maskPixel.b);
+                
+                if (invert) {
+                    alpha = 255 - alpha;
+                }
+                
+                result.data[idx + 3] = alpha;
+            }
+        }
+        
+        return result;
+    },
+
+    /**
      * Feather edges of transparency
      */
     featherEdges(imageData, radius) {

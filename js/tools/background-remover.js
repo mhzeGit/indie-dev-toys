@@ -6,8 +6,10 @@
 const BackgroundRemoverTool = {
     originalImage: null,
     originalImageData: null,
+    customMaskImage: null,
+    customMaskImageData: null,
     resultImageData: null,
-    maskImageData: null,
+    outputMaskImageData: null,
     currentPreview: 'original',
     isPickingColor: false,
     floodFillStart: null,
@@ -37,8 +39,12 @@ const BackgroundRemoverTool = {
         // File upload
         const uploadEl = document.getElementById('bgremove-upload');
         const fileInput = document.getElementById('bgremove-file-input');
-        
         Utils.setupFileUpload(uploadEl, fileInput, (file) => this.loadImage(file));
+        
+        // Mask upload
+        const maskUploadEl = document.getElementById('bgremove-mask-upload');
+        const maskFileInput = document.getElementById('bgremove-mask-file-input');
+        Utils.setupFileUpload(maskUploadEl, maskFileInput, (file) => this.loadMask(file));
 
         // Method change
         document.getElementById('bgremove-method').addEventListener('change', (e) => {
@@ -100,9 +106,11 @@ const BackgroundRemoverTool = {
     onMethodChange(method) {
         const colorGroup = document.getElementById('bgremove-color-picker-group');
         const chromaGroup = document.getElementById('bgremove-chroma-group');
+        const maskGroup = document.getElementById('bgremove-mask-upload-group');
         
         colorGroup.style.display = (method === 'color' || method === 'flood') ? 'block' : 'none';
         chromaGroup.style.display = method === 'chroma' ? 'block' : 'none';
+        maskGroup.style.display = method === 'mask' ? 'block' : 'none';
         
         // Update pick color button text for flood fill
         const pickBtn = document.getElementById('bgremove-pick-color');
@@ -145,7 +153,7 @@ const BackgroundRemoverTool = {
             
             // Reset results
             this.resultImageData = null;
-            this.maskImageData = null;
+            this.outputMaskImageData = null;
             this.floodFillStart = null;
             this.hasProcessed = false;
             
@@ -157,6 +165,24 @@ const BackgroundRemoverTool = {
             
             Utils.hideLoading();
             Utils.showToast('Image loaded successfully', 'success');
+            
+        } catch (error) {
+            Utils.hideLoading();
+            Utils.showToast(error.message, 'error');
+        }
+    },
+
+    async loadMask(file) {
+        try {
+            Utils.showLoading('Loading mask...');
+            
+            this.customMaskImage = await Utils.loadImageFromFile(file);
+            
+            const canvas = Utils.imageToCanvas(this.customMaskImage);
+            this.customMaskImageData = Utils.getImageData(canvas);
+            
+            Utils.hideLoading();
+            Utils.showToast('Mask loaded successfully. It will be applied when you process the image.', 'success');
             
         } catch (error) {
             Utils.hideLoading();
@@ -279,16 +305,16 @@ const BackgroundRemoverTool = {
      * Show mask in preview
      */
     showMask() {
-        if (!this.maskImageData) {
+        if (!this.outputMaskImageData) {
             Utils.showToast('Process an image first', 'warning');
             return;
         }
         
         const canvas = document.getElementById('bgremove-canvas');
         
-        canvas.width = this.maskImageData.width;
-        canvas.height = this.maskImageData.height;
-        Utils.putImageData(canvas, this.maskImageData);
+        canvas.width = this.outputMaskImageData.width;
+        canvas.height = this.outputMaskImageData.height;
+        Utils.putImageData(canvas, this.outputMaskImageData);
         
         if (this.zoomController) {
             this.zoomController.setContent(canvas);
@@ -377,10 +403,22 @@ const BackgroundRemoverTool = {
                         options
                     );
                     break;
+                case 'mask':
+                    if (!this.customMaskImageData) {
+                        Utils.hideLoading();
+                        Utils.showToast('Please upload a mask image first', 'warning');
+                        return;
+                    }
+                    this.resultImageData = ImageProcessor.removeBackgroundByMask(
+                        this.originalImageData,
+                        this.customMaskImageData,
+                        options
+                    );
+                    break;
             }
             
             // Apply feathering
-            if (feather && softness > 0) {
+            if (feather && softness > 0 && method !== 'mask') {
                 this.resultImageData = ImageProcessor.featherEdges(this.resultImageData, softness);
             }
             
@@ -418,17 +456,17 @@ const BackgroundRemoverTool = {
      * Generate mask from result alpha
      */
     generateMask() {
-        this.maskImageData = new ImageData(
+        this.outputMaskImageData = new ImageData(
             this.resultImageData.width,
             this.resultImageData.height
         );
         
         for (let i = 0; i < this.resultImageData.data.length; i += 4) {
             const alpha = this.resultImageData.data[i + 3];
-            this.maskImageData.data[i] = alpha;
-            this.maskImageData.data[i + 1] = alpha;
-            this.maskImageData.data[i + 2] = alpha;
-            this.maskImageData.data[i + 3] = 255;
+            this.outputMaskImageData.data[i] = alpha;
+            this.outputMaskImageData.data[i + 1] = alpha;
+            this.outputMaskImageData.data[i + 2] = alpha;
+            this.outputMaskImageData.data[i + 3] = 255;
         }
     },
 
@@ -456,7 +494,7 @@ const BackgroundRemoverTool = {
     resetImage() {
         if (!this.originalImage) return;
         this.resultImageData = null;
-        this.maskImageData = null;
+        this.outputMaskImageData = null;
         this.hasProcessed = false;
         this.isPickingColor = false;
         document.getElementById('bgremove-download').disabled = true;
@@ -509,10 +547,10 @@ const BackgroundRemoverTool = {
                 }
                 break;
             case 'mask':
-                if (this.maskImageData) {
-                    canvas.width = this.maskImageData.width;
-                    canvas.height = this.maskImageData.height;
-                    Utils.putImageData(canvas, this.maskImageData);
+                if (this.outputMaskImageData) {
+                    canvas.width = this.outputMaskImageData.width;
+                    canvas.height = this.outputMaskImageData.height;
+                    Utils.putImageData(canvas, this.outputMaskImageData);
                     if (this.zoomController) {
                         this.zoomController.setContent(canvas);
                     }

@@ -549,20 +549,23 @@ const Utils = {
 
             zoomAt(factor, clientX, clientY) {
                 const rect = this.container.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
+                const mouseX = clientX - rect.left;
+                const mouseY = clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
                 const newZoom = Utils.clamp(this.zoom * factor, this.minZoom, this.maxZoom);
-                if (newZoom !== this.zoom) {
-                    // Adjust pan to zoom toward mouse position
-                    const zoomDelta = newZoom / this.zoom;
-                    this.panX = (this.panX - (clientX - centerX)) * zoomDelta + (clientX - centerX);
-                    this.panY = (this.panY - (clientY - centerY)) * zoomDelta + (clientY - centerY);
-                    
-                    this.zoom = newZoom;
-                    this.constrainPan();
-                    this.applyTransform();
-                }
+                if (newZoom === this.zoom) return;
+
+                const zoomDelta = newZoom / this.zoom;
+                // With transform-origin:center, the element's center is at (containerCenter + panX).
+                // To keep the pixel under the mouse fixed, adjust pan relative to container center.
+                this.panX = (this.panX - (mouseX - centerX)) * zoomDelta + (mouseX - centerX);
+                this.panY = (this.panY - (mouseY - centerY)) * zoomDelta + (mouseY - centerY);
+
+                this.zoom = newZoom;
+                this.constrainPan();
+                this.applyTransform();
             },
 
             resetZoom() {
