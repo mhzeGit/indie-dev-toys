@@ -148,6 +148,14 @@ const App = {
                     e.preventDefault();
                     return;
                 }
+                if (e.key === 'ArrowLeft') {
+                    // Treat ArrowLeft as ArrowUp (move to previous nav item)
+                    const currentIndex = navItems.indexOf(activeElement);
+                    const newIndex = (currentIndex - 1 + navItems.length) % navItems.length;
+                    navItems[newIndex].focus();
+                    e.preventDefault();
+                    return;
+                }
                 if (e.key === 'ArrowRight') {
                     // Move focus to the current tool's view panel
                     const activeToolView = document.querySelector('.tool-view.active');
