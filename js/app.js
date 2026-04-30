@@ -172,7 +172,18 @@ const App = {
 
         let newIndex = currentIndex;
 
-        if (e.key === 'ArrowDown') {
+        // Handle initial state when nothing is focused
+        if (currentIndex === -1 && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'Enter')) {
+            // Start from first item for ArrowDown/Enter, last item for ArrowUp
+            if (e.key === 'ArrowUp') {
+                newIndex = toolCards.length - 1; // Go to last item
+            } else { // ArrowDown, ArrowRight, Enter
+                newIndex = 0; // Go to first item
+            }
+            e.preventDefault();
+        } 
+        // Handle normal navigation
+        else if (e.key === 'ArrowDown') {
             newIndex = (currentIndex + 1) % toolCards.length;
             e.preventDefault();
         } else if (e.key === 'ArrowUp') {
@@ -306,6 +317,17 @@ const App = {
         
         // Scroll to top
         document.querySelector('.main-content').scrollTop = 0;
+        
+        // Set initial focus for dashboard
+        if (tool === 'dashboard') {
+            // Focus first tool card after a brief delay to ensure DOM is ready
+            setTimeout(() => {
+                const firstToolCard = document.querySelector('.tool-card[data-tool]');
+                if (firstToolCard) {
+                    firstToolCard.focus();
+                }
+            }, 100);
+        }
     },
 
     /**
