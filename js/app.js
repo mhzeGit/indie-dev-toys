@@ -126,6 +126,15 @@ const App = {
                 this.navigateTo('dashboard');
             }
             
+            // Dashboard navigation with arrow keys
+            if (this.currentTool === 'dashboard') {
+                this.handleDashboardNavigation(e);
+                return;
+            }
+            
+            // Tool-specific navigation
+            this.handleToolNavigation(e);
+            
             // Number keys for quick tool access
             if (e.altKey) {
                 const toolKeys = {
@@ -138,13 +147,128 @@ const App = {
                     '7': 'sprite-extractor',
                     '8': 'texture-library',
                     '0': 'dashboard'
-                };
-                
-                if (toolKeys[e.key]) {
-                    this.navigateTo(toolKeys[e.key]);
+        };
+
+        // Update tool views
+        document.querySelectorAll('.tool-view').forEach(view => {
+            view.classList.toggle('active', view.id === tool);
+        });
+
+        this.currentTool = tool;
+
+        // Scroll to top
+        document.querySelector('.main-content').scrollTop = 0;
+    },
+
+    /**
+     * Handle keyboard navigation on dashboard
+     */
+    handleDashboardNavigation(e) {
+        const toolCards = Array.from(document.querySelectorAll('.tool-card'));
+        if (toolCards.length === 0) return;
+
+        const currentIndex = toolCards.findIndex(card => 
+            document.activeElement === card || 
+            document.activeElement === card.querySelector('button') ||
+            document.activeElement.closest('.tool-card') === card
+        );
+
+        let newIndex = currentIndex;
+
+        if (e.key === 'ArrowDown') {
+            newIndex = (currentIndex + 1) % toolCards.length;
+            e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+            newIndex = (currentIndex - 1 + toolCards.length) % toolCards.length;
+            e.preventDefault();
+        } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
+            if (currentIndex >= 0) {
+                const tool = toolCards[currentIndex].dataset.tool;
+                this.navigateTo(tool);
+                e.preventDefault();
+            }
+        }
+
+        if (newIndex !== currentIndex && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+            toolCards[newIndex].focus();
+            e.preventDefault();
+        }
+    },
+
+    /**
+     * Handle keyboard navigation within tools
+     */
+    handleToolNavigation(e) {
+        // Focus on tool panel with ArrowRight when in preview area
+        if (e.key === 'ArrowRight' && 
+            (document.activeElement.closest('#seamless-preview') ||
+             document.activeElement.closest('#extractor-preview') ||
+             document.activeElement.closest('#packer-preview') ||
+             document.activeElement.closest('#normal-preview') ||
+             document.activeElement.closest('#bgremove-preview') ||
+             document.activeElement.closest('#dilation-preview') ||
+             document.activeElement.closest('#atlas-preview') ||
+             document.activeElement.closest('#texlib-preview'))) {
+            
+            // Find the first focusable element in the sidebar
+            const sidebar = document.querySelector('.tool-sidebar');
+            if (sidebar) {
+                const focusable = sidebar.querySelector('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (focusable) {
+                    focusable.focus();
+                    e.preventDefault();
                 }
             }
-        });
+        }
+
+        // Arrow key navigation within tool panels
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            const focusedElement = document.activeElement;
+            const toolSidebar = document.querySelector('.tool-sidebar');
+            
+            if (toolSidebar && toolSidebar.contains(focusedElement)) {
+                const focusableElements = Array.from(toolSidebar.querySelectorAll(
+                    'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                ));
+                
+                if (focusableElements.length === 0) return;
+
+                const currentIndex = focusableElements.indexOf(focusedElement);
+                let newIndex = currentIndex;
+
+                if (e.key === 'ArrowDown') {
+                    newIndex = (currentIndex + 1) % focusableElements.length;
+                } else if (e.key === 'ArrowUp') {
+                    newIndex = (currentIndex - 1 + focusableElements.length) % focusableElements.length;
+                }
+
+                if (newIndex !== currentIndex) {
+                    focusableElements[newIndex].focus();
+                    e.preventDefault();
+                }
+            }
+        }
+
+        // Handle Enter key for buttons and form submission
+        if (e.key === 'Enter') {
+            const activeElement = document.activeElement;
+            
+            // Trigger button clicks
+            if (activeElement.tagName === 'BUTTON' || 
+                activeElement.classList.contains('btn') ||
+                activeElement.closest('.btn')) {
+                activeElement.click();
+                e.preventDefault();
+            }
+            
+            // Handle range inputs and sliders
+            if (activeElement.type === 'range' || activeElement.type === 'number') {
+                // For range inputs, we'll update on change already handled by real-time updates
+                // For number inputs, we can blur to trigger change
+                activeElement.blur();
+                e.preventDefault();
+            }
+        }
     },
 
     /**
