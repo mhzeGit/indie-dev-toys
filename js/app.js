@@ -383,11 +383,11 @@ const App = {
         
         // Set initial focus for dashboard
         if (tool === 'dashboard') {
-            // Focus first tool card after a brief delay to ensure DOM is ready
+            // Focus first sidebar nav item after a brief delay to ensure DOM is ready
             setTimeout(() => {
-                const firstToolCard = document.querySelector('.tool-card[data-tool]');
-                if (firstToolCard) {
-                    firstToolCard.focus();
+                const firstNavItem = document.querySelector('.nav-item[data-tool]');
+                if (firstNavItem) {
+                    firstNavItem.focus();
                 }
             }, 100);
         }
