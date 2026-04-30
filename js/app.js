@@ -147,17 +147,14 @@ const App = {
                     '7': 'sprite-extractor',
                     '8': 'texture-library',
                     '0': 'dashboard'
-        };
+                };
 
-        // Update tool views
-        document.querySelectorAll('.tool-view').forEach(view => {
-            view.classList.toggle('active', view.id === tool);
+                const tool = toolKeys[e.key];
+                if (tool) {
+                    this.navigateTo(tool);
+                }
+            }
         });
-
-        this.currentTool = tool;
-
-        // Scroll to top
-        document.querySelector('.main-content').scrollTop = 0;
     },
 
     /**

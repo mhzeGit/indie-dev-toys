@@ -77,7 +77,8 @@ const SeamlessTextureTool = {
             'crop-right',
             'crop-bottom',
             'seamless-format',
-            'seamless-quality'
+            'seamless-quality',
+            'seamless-tile-count'
         ];
 
         // Debounce timer
@@ -122,6 +123,7 @@ const SeamlessTextureTool = {
         Utils.setupRangeSlider('seamless-blend', 'seamless-blend-value');
         Utils.setupRangeSlider('seamless-avg-intensity', 'seamless-avg-value');
         Utils.setupRangeSlider('seamless-quality', 'seamless-quality-value');
+        Utils.setupRangeSlider('seamless-tile-count', 'seamless-tile-count-value');
     },
 
     /**
@@ -222,9 +224,14 @@ const SeamlessTextureTool = {
         tempCanvas.height = this.resultImageData.height;
         Utils.putImageData(tempCanvas, this.resultImageData);
         
-        // Set as background
+        // Get tile count value
+        const tileCount = parseInt(document.getElementById('seamless-tile-count').value);
+        
+        // Set as background with tiled pattern
         tiledPreview.style.backgroundImage = `url(${tempCanvas.toDataURL()})`;
-        tiledPreview.style.backgroundSize = `${Math.min(256, this.resultImageData.width)}px`;
+        // Calculate size based on tile count - make sure we see multiple tiles
+        const previewSize = Math.min(256, this.resultImageData.width) * tileCount;
+        tiledPreview.style.backgroundSize = `${previewSize}px`;
         
         canvas.style.display = 'none';
         tiledPreview.style.display = 'block';
