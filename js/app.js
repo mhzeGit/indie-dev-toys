@@ -134,9 +134,28 @@ const App = {
             const activeElement = document.activeElement;
             const navItems = Array.from(document.querySelectorAll('.nav-item'));
             
+            // Smart refocus: if focus is not on a focusable element we care about,
+            // redirect to first nav item on arrow key press
+            const focusableSelector = 'button, input, select, textarea, [tabindex]:not([tabindex="-1"]), .nav-item';
+            let isInFocusable = false;
+            if (activeElement && activeElement.matches) {
+                isInFocusable = activeElement.matches(focusableSelector) || 
+                                activeElement.closest('.tool-view') || 
+                                activeElement.closest('.tool-sidebar');
+            }
+            if (!isInFocusable && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                const firstNavItem = navItems[0];
+                if (firstNavItem) {
+                    firstNavItem.focus();
+                    e.preventDefault();
+                    return;
+                }
+            }
+            
             // Arrow key navigation for sidebar nav items
             if (navItems.includes(activeElement)) {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    // Cycle through nav items
                     const currentIndex = navItems.indexOf(activeElement);
                     let newIndex;
                     if (e.key === 'ArrowDown') {
@@ -148,24 +167,20 @@ const App = {
                     e.preventDefault();
                     return;
                 }
-                if (e.key === 'ArrowLeft') {
-                    // Treat ArrowLeft as ArrowUp (move to previous nav item)
-                    const currentIndex = navItems.indexOf(activeElement);
-                    const newIndex = (currentIndex - 1 + navItems.length) % navItems.length;
-                    navItems[newIndex].focus();
-                    e.preventDefault();
-                    return;
-                }
                 if (e.key === 'ArrowRight') {
-                    // Move focus to the current tool's view panel
+                    // Move focus to the current tool's view panel and trigger first actionable element
                     const activeToolView = document.querySelector('.tool-view.active');
                     if (activeToolView) {
-                        // Prefer focusing first focusable element in the sidebar
+                        // Try to find first focusable element in the sidebar that is actionable
                         const sidebar = activeToolView.querySelector('.tool-sidebar');
                         if (sidebar) {
                             const focusable = sidebar.querySelector('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
                             if (focusable) {
                                 focusable.focus();
+                                // If it's a button, auto-click it
+                                if (focusable.tagName === 'BUTTON' || focusable.classList.contains('btn')) {
+                                    focusable.click();
+                                }
                             } else {
                                 // Focus the sidebar itself
                                 sidebar.setAttribute('tabindex', '-1');
@@ -195,7 +210,33 @@ const App = {
                 }
             }
             
-            // Tool-specific navigation (e.g., within tool sidebar)
+            // Arrow key navigation within tool sidebar (cycle through elements and auto-click buttons)
+            if (activeElement.closest('.tool-sidebar') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                const sidebar = activeElement.closest('.tool-sidebar');
+                const focusableElements = Array.from(sidebar.querySelectorAll(
+                    'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                ));
+                
+                if (focusableElements.length > 0) {
+                    const currentIndex = focusableElements.indexOf(activeElement);
+                    let newIndex;
+                    if (e.key === 'ArrowDown') {
+                        newIndex = (currentIndex + 1) % focusableElements.length;
+                    } else {
+                        newIndex = (currentIndex - 1 + focusableElements.length) % focusableElements.length;
+                    }
+                    const newElement = focusableElements[newIndex];
+                    newElement.focus();
+                    // Auto-click if it's a button
+                    if (newElement.tagName === 'BUTTON' || newElement.classList.contains('btn')) {
+                        newElement.click();
+                    }
+                    e.preventDefault();
+                    return;
+                }
+            }
+            
+            // Tool-specific navigation (preserves existing preview area handling)
             this.handleToolNavigation(e);
             
             // Number keys for quick tool access
@@ -291,35 +332,7 @@ const App = {
                 }
             }
         }
-
-        // Arrow key navigation within tool panels
-        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-            const focusedElement = document.activeElement;
-            const toolSidebar = document.querySelector('.tool-sidebar');
-            
-            if (toolSidebar && toolSidebar.contains(focusedElement)) {
-                const focusableElements = Array.from(toolSidebar.querySelectorAll(
-                    'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                ));
-                
-                if (focusableElements.length === 0) return;
-
-                const currentIndex = focusableElements.indexOf(focusedElement);
-                let newIndex = currentIndex;
-
-                if (e.key === 'ArrowDown') {
-                    newIndex = (currentIndex + 1) % focusableElements.length;
-                } else if (e.key === 'ArrowUp') {
-                    newIndex = (currentIndex - 1 + focusableElements.length) % focusableElements.length;
-                }
-
-                if (newIndex !== currentIndex) {
-                    focusableElements[newIndex].focus();
-                    e.preventDefault();
-                }
-            }
-        }
-
+        
         // Handle Enter key for buttons and form submission
         if (e.key === 'Enter') {
             const activeElement = document.activeElement;
