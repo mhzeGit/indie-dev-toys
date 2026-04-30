@@ -64,6 +64,55 @@ const SeamlessTextureTool = {
             const qualityGroup = document.getElementById('seamless-quality-group');
             qualityGroup.style.display = e.target.value === 'png' ? 'none' : 'block';
         });
+
+        // Real-time updates for input controls
+        const realtimeControls = [
+            'seamless-method',
+            'seamless-blend',
+            'seamless-normalize',
+            'seamless-average-edges',
+            'seamless-avg-intensity',
+            'crop-left',
+            'crop-top',
+            'crop-right',
+            'crop-bottom',
+            'seamless-format',
+            'seamless-quality'
+        ];
+
+        // Debounce timer
+        let debounceTimer = null;
+        const debounceDelay = 300; // 300ms debounce
+
+        realtimeControls.forEach(controlId => {
+            const control = document.getElementById(controlId);
+            if (control) {
+                const handler = () => {
+                    // Clear existing timer
+                    if (debounceTimer) {
+                        clearTimeout(debounceTimer);
+                    }
+                    
+                    // Set new timer
+                    debounceTimer = setTimeout(() => {
+                        // Only process if we have an image and have processed before
+                        if (this.originalImageData && this.hasProcessed) {
+                            this.processImage();
+                        }
+                    }, debounceDelay);
+                };
+
+                // Add appropriate event listener based on control type
+                if (control.type === 'checkbox' || control.type === 'radio') {
+                    control.addEventListener('change', handler);
+                } else if (control.type === 'select-one') {
+                    control.addEventListener('change', handler);
+                } else {
+                    // For range and number inputs
+                    control.addEventListener('input', handler);
+                }
+            }
+        });
     },
 
     /**
@@ -179,6 +228,11 @@ const SeamlessTextureTool = {
         
         canvas.style.display = 'none';
         tiledPreview.style.display = 'block';
+        
+        // Set tiled preview as zoom controller content
+        if (this.zoomController) {
+            this.zoomController.setContent(tiledPreview);
+        }
         
         this.currentPreview = 'tiled';
         this.updatePreviewTabs();
