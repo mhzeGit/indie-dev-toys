@@ -257,9 +257,9 @@ html, body {
    ================================ */
 .tool-layout {
     display: grid;
-    grid-template-columns: 320px auto;
-    gap: 24px;
-    height: calc(100vh - 180px);
+    grid-template-columns: minmax(360px, 38%) auto;
+    gap: 20px;
+    height: calc(100vh - 160px);
 }
 
 .tool-sidebar {
