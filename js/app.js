@@ -16,6 +16,7 @@ const App = {
         'texture-dilation': { view: 'views/texture-dilation.html', init: () => TextureDilationTool.init() },
         'normal-map': { view: 'views/normal-map.html', init: () => NormalMapTool.init() },
         'channel-packer': { view: 'views/channel-packer.html', init: () => ChannelPacker.init() },
+        'channel-unpacker': { view: 'views/channel-unpacker.html', init: () => ChannelUnpacker.init() },
         'atlas-packer': { view: 'views/atlas-packer.html', init: () => AtlasPacker.init() },
         'sprite-extractor': { view: 'views/sprite-extractor.html', init: () => SpriteExtractor.init() },
         'texture-library': { view: 'views/texture-library.html', init: () => TextureLibrary.init() },

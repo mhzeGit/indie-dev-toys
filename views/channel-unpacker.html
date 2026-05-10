@@ -1,0 +1,64 @@
+<!-- Channel Unpacker Tool -->
+<div id="channel-unpacker" class="tool-view">
+    <header class="tool-header">
+        <h1><i class="fas fa-layer-group"></i> Channel Unpacker</h1>
+        <p>Extract R, G, B, and Alpha channels from an image into separate grayscale textures.</p>
+    </header>
+    <div class="tool-layout">
+        <div class="tool-sidebar">
+            <div class="control-group">
+                <label>Input Texture</label>
+                <div class="channel-dropzone" id="dropzone-unpacker" style="height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--border-color); border-radius: 8px; cursor: pointer; background: var(--bg-color);">
+                    <i class="fas fa-image fa-2x" style="margin-bottom: 10px; color: var(--text-muted);"></i>
+                    <span>Drop image or click</span>
+                    <input type="file" accept="image/*" id="input-unpacker" hidden>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Extract Channels</label>
+                <label class="checkbox-label" style="margin-bottom: 8px;">
+                    <input type="checkbox" id="extract-r" checked>
+                    <span>Red Channel</span>
+                </label>
+                <label class="checkbox-label" style="margin-bottom: 8px;">
+                    <input type="checkbox" id="extract-g" checked>
+                    <span>Green Channel</span>
+                </label>
+                <label class="checkbox-label" style="margin-bottom: 8px;">
+                    <input type="checkbox" id="extract-b" checked>
+                    <span>Blue Channel</span>
+                </label>
+                <label class="checkbox-label" style="margin-bottom: 8px;">
+                    <input type="checkbox" id="extract-a" checked>
+                    <span>Alpha Channel</span>
+                </label>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="unpacker-process" disabled>
+                <i class="fas fa-cut"></i> Extract Channels
+            </button>
+            <button class="btn btn-secondary btn-block" id="unpacker-download-all" disabled>
+                <i class="fas fa-download"></i> Download Selected (ZIP)
+            </button>
+        </div>
+
+        <div class="tool-preview">
+            <div class="preview-tabs" id="unpacker-tabs" style="display: none;">
+                <button class="preview-tab active" data-preview="original">Original</button>
+                <button class="preview-tab" data-preview="r">R Channel</button>
+                <button class="preview-tab" data-preview="g">G Channel</button>
+                <button class="preview-tab" data-preview="b">B Channel</button>
+                <button class="preview-tab" data-preview="a">A Channel</button>
+            </div>
+            <div class="preview-container transparency-bg" id="unpacker-preview">
+                <div class="preview-placeholder">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Upload texture to extract channels</span>
+                </div>
+                <canvas id="unpacker-canvas" style="display: none;"></canvas>
+            </div>
+            <div class="preview-info" id="unpacker-info"></div>
+        </div>
+    </div>
+</div>
