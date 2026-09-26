@@ -128,12 +128,14 @@ const FileConverter = (() => {
         showCodecBar(true);
 
         try {
-            // Use the ESM build via dynamic import (proxied same-origin).
-            // The ESM worker uses import(/* webpackIgnore: true */ coreURL) which
-            // bypasses webpack's __webpack_require__, so blob: URLs work correctly.
-            // The UMD build's webpack-bundled worker was intercepting importScripts/
-            // require and failing with "Cannot find module 'blob:...'".
-            const { FFmpeg } = await import('/_cdn/ffmpeg-esm/index.js');
+            // FFmpeg is self-hosted under js/vendor/ffmpeg/ and loaded from the
+            // page's own origin, so the dynamic import and the module worker work
+            // on any static host (GitHub Pages, local server, …) with no CDN
+            // proxy or special headers.  The ESM worker uses
+            // import(/* webpackIgnore: true */ coreURL) which bypasses webpack's
+            // __webpack_require__, so blob: URLs work correctly.
+            const FFMPEG_BASE = new URL('js/vendor/ffmpeg/', document.baseURI).href;
+            const { FFmpeg } = await import(FFMPEG_BASE + 'ffmpeg/index.js');
 
             ffmpeg = new FFmpeg();
 
@@ -146,7 +148,7 @@ const FileConverter = (() => {
                 setCodecProgress(pct);
             });
 
-            const CORE_PATH = '/_cdn/ffmpeg-core';
+            const CORE_PATH = FFMPEG_BASE + 'core';
 
             // Download WASM via XHR so we can report real progress.
             const wasmURL = await loadWasmWithProgress(
